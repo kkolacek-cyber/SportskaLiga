@@ -1,0 +1,27 @@
+# Build kontekst je korijen repozitorija; ovdje je sve što ne smije u image.
+
+# Build izlaz (u kontejneru se gradi iznova; artifacts/ je UseArtifactsOutput)
+artifacts
+**/bin
+**/obj
+
+# Verzioniranje, IDE
+.git
+.gitignore
+.gitattributes
+.vs
+.vscode
+.idea
+
+# Tajne i lokalna konfiguracija
+.env
+**/.env
+**/appsettings.Development.json
+**/launchSettings.json
+
+# Ostalo što aplikacije ne trebaju
+postman
+docker-compose*.yml
+**/Dockerfile*
+README.md
+*.md

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- TargetFramework, Nullable i ImplicitUsings dolaze iz Directory.Build.props u korijenu.
+       Domena nema NuGet paketa: ne zna ni za EF Core ni za ASP.NET. -->
+
+</Project>

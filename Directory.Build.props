@@ -1,0 +1,13 @@
+<Project>
+
+  <!-- Vrijedi za sve projekte u rješenju (SportskaLiga.csproj i src/**). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Sav build izlaz ide u artifacts/ u korijenu umjesto u bin/ i obj/ pored svakog .csproj-a. -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+  </PropertyGroup>
+
+</Project>

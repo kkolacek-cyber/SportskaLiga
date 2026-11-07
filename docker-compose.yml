@@ -1,0 +1,30 @@
+name: sportskaliga
+
+# Faza 1: za sada samo baza. Portal, Admin i Api dodaju se u kasnijim fazama.
+#
+#   docker compose up -d db      PostgreSQL na localhost:5432
+#
+# Zadane vrijednosti (${VAR:-default}) su DEMO vrijednosti samo za razvoj, tako da naredba radi
+# na čistom računalu bez .env datoteke. Za vlastite vrijednosti kopiraj .env.example u .env.
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sportskaliga}
+      POSTGRES_USER: ${POSTGRES_USER:-liga}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-liga_dev_password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  pgdata:    # podaci PostgreSQL-a

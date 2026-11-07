@@ -1,0 +1,6 @@
+# Normalizira završetke redaka; Docker/compose datoteke uvijek LF (i kad se klonira na Windowsu).
+* text=auto
+Dockerfile text eol=lf
+**/Dockerfile text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
