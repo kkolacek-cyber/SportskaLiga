@@ -1,0 +1,47 @@
+@* Obrazac za prijavu; jedina stranica dostupna bez prijave. *@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Prijava";
+}
+
+<div class="row justify-content-center">
+    <div class="col-sm-10 col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h3 mb-1">Prijava</h1>
+                <p class="text-muted">Administracija je namijenjena administratorima lige i delegatima utakmica.</p>
+
+                @* ReturnUrl (skriveno polje) pamti stranicu koju je korisnik tražio, pa ga prijava vraća na nju. *@
+                <form asp-action="Login" method="post" novalidate>
+                    <input asp-for="ReturnUrl" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" type="email" class="form-control" autocomplete="username" autofocus />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Lozinka" class="form-label"></label>
+                        <input asp-for="Lozinka" class="form-control" autocomplete="current-password" />
+                        <span asp-validation-for="Lozinka" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input asp-for="ZapamtiMe" class="form-check-input" />
+                        <label asp-for="ZapamtiMe" class="form-check-label"></label>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Prijavi se</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

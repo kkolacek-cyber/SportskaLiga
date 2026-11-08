@@ -1,0 +1,46 @@
+@* Popis sudaca (samo Administrator). *@
+@model IReadOnlyList<Sudac>
+@{
+    ViewData["Title"] = "Suci";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2 mb-0">Suci</h1>
+    <a asp-action="Create" class="btn btn-primary">Dodaj suca</a>
+</div>
+
+<div class="card">
+    @if (Model.Count == 0)
+    {
+        <div class="card-body text-muted">Još nema sudaca.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sudac</th>
+                        <th>E-mail</th>
+                        <th>Telefon</th>
+                        <th class="text-end">Radnje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@s.Prezime, @s.Ime</td>
+                            <td>@s.Email</td>
+                            <td>@s.Telefon</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary">Uredi</a>
+                                <a asp-action="Delete" asp-route-id="@s.Id" class="btn btn-sm btn-outline-danger">Obriši</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

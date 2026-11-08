@@ -24,6 +24,9 @@ public interface IUtakmicaRepository : IRepository<Utakmica>
     /// <summary>Broj utakmica sezone po statusu (za nadzornu ploču).</summary>
     Task<IReadOnlyDictionary<StatusUtakmice, int>> BrojPoStatusuAsync(int sezonaId, CancellationToken ct = default);
 
+    /// <summary>Ukupan broj golova po kolu u odigranim utakmicama (za graf na nadzornoj ploči).</summary>
+    Task<IReadOnlyDictionary<int, int>> GoloviPoKoluAsync(int sezonaId, CancellationToken ct = default);
+
     /// <summary>
     /// Provjere za ručno dodanu ili izmijenjenu utakmicu: obje momčadi moraju biti prijavljene u sezonu
     /// i biti različite. Vraća grešku s nazivom polja ili uspjeh.

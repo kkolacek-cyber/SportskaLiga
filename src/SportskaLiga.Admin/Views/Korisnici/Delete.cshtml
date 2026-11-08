@@ -1,0 +1,32 @@
+@* Potvrda brisanja korisnika; zadnji administrator i vlastiti račun ne mogu se obrisati (provjerava kontroler). *@
+@model KorisnikListItem
+@{
+    ViewData["Title"] = "Brisanje korisnika";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Korisnici</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Brisanje</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h1 class="h4 text-danger">Obrisati korisnika @Model.Email?</h1>
+                <p class="mb-1">@Model.ImePrezime <span class="badge text-bg-secondary">@Model.Uloga</span></p>
+                <p>Utakmice kojima je bio delegat ostaju, ali bez dodijeljenog delegata. Ova radnja se ne može poništiti.</p>
+
+                <form method="post">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">Obriši</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

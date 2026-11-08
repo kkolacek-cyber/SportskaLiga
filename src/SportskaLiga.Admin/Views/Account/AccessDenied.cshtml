@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "Pristup odbijen";
+}
+
+@* Prikazuje se prijavljenom korisniku čija uloga nema pravo na traženu stranicu (npr. delegat na Korisnike). *@
+<div class="text-center py-5">
+    <h1 class="display-6 text-danger">Pristup odbijen</h1>
+    <p class="lead">Nemate ovlasti za ovu stranicu. Ako mislite da je to pogreška, obratite se administratoru.</p>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Natrag na nadzornu ploču</a>
+</div>

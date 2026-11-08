@@ -1,0 +1,134 @@
+@* Isti obrazac za ručno dodavanje (Id = 0) i uređivanje utakmice. *@
+@model UtakmicaFormViewModel
+@{
+    var nova = Model.Id == 0;
+    ViewData["Title"] = nova ? "Nova utakmica" : "Uređivanje utakmice";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index" asp-route-sezonaId="@Model.SezonaId">Utakmice</a></li>
+        @if (!nova)
+        {
+            <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.Id">Detalji</a></li>
+        }
+        <li class="breadcrumb-item active" aria-current="page">@(nova ? "Dodavanje" : "Uređivanje")</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-9 col-xl-7">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+                @if (nova)
+                {
+                    <p class="text-muted small">
+                        Cijeli raspored sezone najlakše je generirati na stranici sezone; ovdje se dodaje pojedinačna utakmica
+                        (npr. odgođena utakmica u novom terminu). Ponuđene su samo momčadi prijavljene u odabranu sezonu.
+                    </p>
+                }
+
+                <form method="post" novalidate>
+                    <input asp-for="Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="SezonaId" class="form-label"></label>
+                            @if (Model.Odigrana)
+                            {
+                                <select asp-for="SezonaId" asp-items="Model.Sezone" class="form-select" disabled></select>
+                                <input type="hidden" asp-for="SezonaId" />
+                            }
+                            else
+                            {
+                                @* Promjena sezone ponovno učitava obrazac (GET) da se ponude momčadi te sezone. *@
+                                <select asp-for="SezonaId" asp-items="Model.Sezone" class="form-select"
+                                        onchange="if (@(nova ? "true" : "false")) location.search = '?sezonaId=' + this.value;"></select>
+                            }
+                            <span asp-validation-for="SezonaId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Kolo" class="form-label"></label>
+                            <input asp-for="Kolo" class="form-control" />
+                            <span asp-validation-for="Kolo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Pocetak" class="form-label"></label>
+                            <input asp-for="Pocetak" class="form-control" />
+                            <span asp-validation-for="Pocetak" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="DomacinId" class="form-label"></label>
+                            <select asp-for="DomacinId" asp-items="Model.Momcadi" class="form-select" disabled="@Model.Odigrana">
+                                <option value="">Odaberite domaćina&hellip;</option>
+                            </select>
+                            <span asp-validation-for="DomacinId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="GostId" class="form-label"></label>
+                            <select asp-for="GostId" asp-items="Model.Momcadi" class="form-select" disabled="@Model.Odigrana">
+                                <option value="">Odaberite gosta&hellip;</option>
+                            </select>
+                            <span asp-validation-for="GostId" class="text-danger"></span>
+                        </div>
+                        @if (Model.Odigrana)
+                        {
+                            @* Onemogućena polja se ne šalju; vrijednosti ionako zadržava kontroler. *@
+                            <input type="hidden" asp-for="DomacinId" />
+                            <input type="hidden" asp-for="GostId" />
+                            <div class="col-12 form-text mt-0">Utakmica ima upisan rezultat: momčadi se ne mogu mijenjati dok se rezultat ne poništi.</div>
+                        }
+
+                        <div class="col-md-6">
+                            <label asp-for="Lokacija" class="form-label"></label>
+                            <input asp-for="Lokacija" class="form-control" placeholder="Prazno = igralište domaćina nije upisano" />
+                            <span asp-validation-for="Lokacija" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Status" class="form-label"></label>
+                            <select asp-for="Status" asp-items="Model.Statusi" class="form-select" disabled="@Model.Odigrana"></select>
+                            @if (Model.Odigrana)
+                            {
+                                <input type="hidden" asp-for="Status" />
+                            }
+                            <div class="form-text">"Odigrana" postaje automatski kad delegat upiše rezultat.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="SudacId" class="form-label"></label>
+                            <select asp-for="SudacId" asp-items="Model.Suci" class="form-select">
+                                <option value="">Nije određen</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="DelegatId" class="form-label"></label>
+                            <select asp-for="DelegatId" asp-items="Model.Delegati" class="form-select">
+                                <option value="">Nije određen</option>
+                            </select>
+                            <div class="form-text">Samo dodijeljeni delegat (i administrator) može upisati rezultat.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Napomena" class="form-label"></label>
+                            <textarea asp-for="Napomena" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Napomena" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Spremi</button>
+                        <a asp-action="Index" asp-route-sezonaId="@Model.SezonaId" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

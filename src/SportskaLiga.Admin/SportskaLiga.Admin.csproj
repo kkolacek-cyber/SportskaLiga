@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Administracija (ASP.NET Core MVC). Paketi za EF Core i Identity dolaze tranzitivno preko Data projekta. -->
+  <ItemGroup>
+    <ProjectReference Include="..\SportskaLiga.Data\SportskaLiga.Data.csproj" />
+    <ProjectReference Include="..\SportskaLiga.Domain\SportskaLiga.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

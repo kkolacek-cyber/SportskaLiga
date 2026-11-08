@@ -1,0 +1,71 @@
+@* Isti obrazac za registraciju (Id = 0) i uređivanje igrača. *@
+@model IgracFormViewModel
+@{
+    var novi = Model.Id == 0;
+    ViewData["Title"] = novi ? "Registracija igrača" : "Uređivanje igrača";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Igrači</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@(novi ? "Registracija" : "Uređivanje")</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+                <form method="post" novalidate>
+                    <input asp-for="Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Ime" class="form-label"></label>
+                            <input asp-for="Ime" class="form-control" autofocus />
+                            <span asp-validation-for="Ime" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Prezime" class="form-label"></label>
+                            <input asp-for="Prezime" class="form-control" />
+                            <span asp-validation-for="Prezime" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label asp-for="MomcadId" class="form-label"></label>
+                            <select asp-for="MomcadId" asp-items="Model.Momcadi" class="form-select">
+                                <option value="">Odaberite momčad&hellip;</option>
+                            </select>
+                            <span asp-validation-for="MomcadId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="BrojDresa" class="form-label"></label>
+                            <input asp-for="BrojDresa" class="form-control" min="1" max="99" />
+                            <span asp-validation-for="BrojDresa" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Pozicija" class="form-label"></label>
+                            <select asp-for="Pozicija" asp-items="Html.GetEnumSelectList<Pozicija>()" class="form-select"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="DatumRodenja" class="form-label"></label>
+                            <input asp-for="DatumRodenja" class="form-control" />
+                            <span asp-validation-for="DatumRodenja" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Spremi</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

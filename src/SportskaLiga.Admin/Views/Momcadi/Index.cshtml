@@ -1,0 +1,87 @@
+@* Popis momčadi s pretragom i straničenjem. *@
+@model MomcadiIndexViewModel
+@{
+    ViewData["Title"] = "Momčadi";
+    var rezultat = Model.Rezultat;
+    var pager = new PagerViewModel
+    {
+        Stranica = rezultat.Stranica,
+        UkupnoStranica = rezultat.UkupnoStranica,
+        Kontroler = "Momcadi",
+        Parametri = string.IsNullOrWhiteSpace(Model.Tekst) ? new Dictionary<string, string?>() : new Dictionary<string, string?> { ["tekst"] = Model.Tekst }
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2 mb-0">Momčadi</h1>
+    @if (User.IsInRole(Roles.Administrator))
+    {
+        <a asp-action="Create" class="btn btn-primary">Registriraj momčad</a>
+    }
+</div>
+
+@* Pretraga je GET obrazac: upit se vidi u adresi, pa se rezultat može označiti u pregledniku. *@
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2">
+        <div class="col">
+            <input asp-for="Tekst" class="form-control" placeholder="Naziv ili grad" aria-label="Pretraga" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Traži</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Tekst))
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary" title="Očisti">&times;</a>
+            }
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-header">Ukupno: <strong>@rezultat.UkupnoStavki</strong></div>
+
+    @if (rezultat.Items.Count == 0)
+    {
+        <div class="card-body text-muted">Nema momčadi koje odgovaraju pretrazi.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Naziv</th>
+                        <th>Grad</th>
+                        <th class="d-none d-md-table-cell">Igralište</th>
+                        <th class="text-center">Igrača</th>
+                        <th class="text-end">Radnje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in rezultat.Items)
+                    {
+                        <tr>
+                            <td><a asp-action="Details" asp-route-id="@m.Id" class="fw-semibold text-decoration-none">@m.Naziv</a></td>
+                            <td>@m.Grad</td>
+                            <td class="d-none d-md-table-cell">@m.Igraliste</td>
+                            <td class="text-center">@m.Igraci.Count</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@m.Id" class="btn btn-sm btn-outline-secondary">Detalji</a>
+                                @if (User.IsInRole(Roles.Administrator))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary">Uredi</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (rezultat.UkupnoStranica > 1)
+    {
+        <div class="card-footer">
+            <partial name="_Pager" model="pager" />
+        </div>
+    }
+</div>

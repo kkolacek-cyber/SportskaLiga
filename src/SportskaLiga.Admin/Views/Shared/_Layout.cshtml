@@ -1,0 +1,100 @@
+@{
+    // Pomoćne vrijednosti za izbornik: aktivni kontroler (za isticanje stavke) i uloga prijavljenog korisnika.
+    var kontroler = ViewContext.RouteData.Values["controller"]?.ToString();
+    string Aktivno(params string[] kontroleri) => kontroleri.Contains(kontroler) ? "active" : "";
+    var prijavljen = User.Identity?.IsAuthenticated == true;
+    var admin = User.IsInRole(Roles.Administrator);
+    var uloga = admin ? Roles.Administrator : User.IsInRole(Roles.Delegat) ? Roles.Delegat : null;
+}
+@* Zajednički okvir svih stranica administracije: navigacija (stavke ovise o ulozi), poruke i podnožje. *@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Liga Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-liga mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    <span class="logo-lopta" aria-hidden="true"></span>
+                    Amaterska liga <span class="navbar-brand-dodatak">Admin</span>
+                </a>
+
+                @* Izbornik se prikazuje samo prijavljenom korisniku (na stranici za prijavu ga nema). *@
+                @if (prijavljen)
+                {
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#glavniIzbornik"
+                            aria-controls="glavniIzbornik" aria-expanded="false" aria-label="Prikaži izbornik">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="glavniIzbornik">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item"><a class="nav-link @Aktivno("Home")" asp-controller="Home" asp-action="Index">Nadzorna ploča</a></li>
+                            <li class="nav-item"><a class="nav-link @Aktivno("Utakmice")" asp-controller="Utakmice" asp-action="Index">Utakmice</a></li>
+                            <li class="nav-item"><a class="nav-link @Aktivno("Momcadi")" asp-controller="Momcadi" asp-action="Index">Momčadi</a></li>
+                            <li class="nav-item"><a class="nav-link @Aktivno("Igraci")" asp-controller="Igraci" asp-action="Index">Igrači</a></li>
+                            @* Sezone, suce i korisnike vidi samo Administrator (delegat dobiva 403 i ako ručno upiše adresu). *@
+                            @if (admin)
+                            {
+                                <li class="nav-item"><a class="nav-link @Aktivno("Sezone")" asp-controller="Sezone" asp-action="Index">Sezone</a></li>
+                                <li class="nav-item"><a class="nav-link @Aktivno("Suci")" asp-controller="Suci" asp-action="Index">Suci</a></li>
+                                <li class="nav-item"><a class="nav-link @Aktivno("Korisnici")" asp-controller="Korisnici" asp-action="Index">Korisnici</a></li>
+                            }
+                        </ul>
+                        @* Odjava je POST obrazac (a ne poveznica) uz antiforgery token. *@
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-flex align-items-center gap-3">
+                            <span class="navbar-text small">
+                                @User.Identity!.Name
+                                @if (uloga is not null)
+                                {
+                                    <span class="badge badge-uloga ms-1">@uloga</span>
+                                }
+                            </span>
+                            <button type="submit" class="btn btn-outline-light btn-sm">Odjava</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid px-4">
+        <main role="main" class="pb-5">
+            @* Poruke iz kontrolera (TempData) preživljavaju jedno preusmjeravanje: zelena = uspjeh, crvena = greška. *@
+            @if (TempData["Poruka"] is string poruka)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @poruka
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zatvori"></button>
+                </div>
+            }
+            @if (TempData["Greska"] is string greska)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @greska
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zatvori"></button>
+                </div>
+            }
+
+            @* Ovdje se umeće sadržaj pojedine stranice. *@
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer text-muted">
+        <div class="container-fluid px-4">
+            &copy; 2026 Amaterska sportska liga &ndash; administracija
+        </div>
+    </footer>
+
+    @* Skripte su na kraju stranice; sekcija Scripts omogućuje da pojedine stranice dodaju svoje (validacija, grafovi...). *@
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

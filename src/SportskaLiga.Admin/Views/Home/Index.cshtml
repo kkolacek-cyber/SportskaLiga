@@ -1,0 +1,170 @@
+@model DashboardViewModel
+@* Nadzorna ploča aktivne sezone: brojevi, grafovi (asinkrono), tablica, strijelci i utakmice koje traže pažnju. *@
+@{
+    ViewData["Title"] = "Nadzorna ploča";
+}
+
+@if (Model.Sezona is null)
+{
+    <div class="text-center py-5">
+        <h1 class="h3">Još nema nijedne sezone</h1>
+        @if (User.IsInRole(Roles.Administrator))
+        {
+            <a asp-controller="Sezone" asp-action="Create" class="btn btn-primary mt-2">Dodaj sezonu</a>
+        }
+    </div>
+    return;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h2 mb-0">Sezona @Model.Sezona.Naziv</h1>
+    <span class="text-muted">@Kalendar.Danas.ToString("dddd, dd.MM.yyyy.")</span>
+</div>
+
+@* Kartice s brojevima; svaka vodi na popis utakmica već filtriran na to stanje. *@
+<div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
+    <div class="col">
+        <a asp-controller="Utakmice" asp-action="Index" asp-route-samoCekajuRezultat="true" class="card text-decoration-none h-100 brojka brojka-warning">
+            <div class="card-body">
+                <div class="display-6 fw-bold">@Model.CekajuRezultat</div>
+                <div class="text-muted">@(Model.JeDelegat ? "Mojih utakmica čeka rezultat" : "Čeka rezultat")</div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a asp-controller="Utakmice" asp-action="Index" asp-route-status="Odigrana" asp-route-samoMoje="false" class="card text-decoration-none h-100 brojka brojka-success">
+            <div class="card-body">
+                <div class="display-6 fw-bold">@Model.Odigrano</div>
+                <div class="text-muted">Odigrano</div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a asp-controller="Utakmice" asp-action="Index" asp-route-status="Zakazana" asp-route-samoMoje="false" class="card text-decoration-none h-100 brojka brojka-info">
+            <div class="card-body">
+                <div class="display-6 fw-bold">@Model.Zakazano</div>
+                <div class="text-muted">Zakazano</div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <a asp-controller="Utakmice" asp-action="Index" asp-route-status="Odgodena" asp-route-samoMoje="false" class="card text-decoration-none h-100 brojka brojka-danger">
+            <div class="card-body">
+                <div class="display-6 fw-bold">@Model.Odgodeno</div>
+                <div class="text-muted">Odgođeno</div>
+            </div>
+        </a>
+    </div>
+    <div class="col">
+        <div class="card h-100 brojka brojka-primary">
+            <div class="card-body">
+                <div class="display-6 fw-bold">@Model.UkupnoGolova</div>
+                <div class="text-muted">Golova u sezoni</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    @* Utakmice koje čekaju rezultat – glavni posao delegata. *@
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">@(Model.JeDelegat ? "Moje utakmice bez rezultata" : "Utakmice bez rezultata")</div>
+            @if (Model.ZaUnos.Count == 0)
+            {
+                <div class="card-body text-muted">Svi rezultati su upisani.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var u in Model.ZaUnos)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                            <span>
+                                <span class="text-muted small">@(u.Kolo). kolo · @Kalendar.ULokalno(u.Pocetak).ToString("dd.MM. HH:mm")</span><br />
+                                @u.Domacin?.Naziv &ndash; @u.Gost?.Naziv
+                            </span>
+                            <a asp-controller="Utakmice" asp-action="Rezultat" asp-route-id="@u.Id" class="btn btn-sm btn-warning text-nowrap">Upiši rezultat</a>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">@(Model.JeDelegat ? "Moje sljedeće utakmice" : "Sljedeće utakmice")</div>
+            @if (Model.Sljedece.Count == 0)
+            {
+                <div class="card-body text-muted">Nema zakazanih utakmica.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var u in Model.Sljedece)
+                    {
+                        <li class="list-group-item">
+                            <span class="text-muted small">@(u.Kolo). kolo · @Kalendar.ULokalno(u.Pocetak).ToString("dd.MM. HH:mm") · @u.Lokacija</span><br />
+                            <a asp-controller="Utakmice" asp-action="Details" asp-route-id="@u.Id" class="text-decoration-none">@u.Domacin?.Naziv &ndash; @u.Gost?.Naziv</a>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="card h-100">
+            <div class="card-header">Tablica</div>
+            <partial name="_TablicaLige" model="Model.Tablica" />
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card h-100">
+            <div class="card-header">Najbolji strijelci</div>
+            @if (Model.Strijelci.Count == 0)
+            {
+                <div class="card-body text-muted">Još nema golova.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var s in Model.Strijelci)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><span class="text-muted me-1">@(s.Pozicija).</span> @s.Igrac <span class="text-muted small">(@s.Momcad)</span></span>
+                            <span class="badge text-bg-dark rounded-pill">@s.Golovi</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+@* Okvir za grafove: dashboard.js dohvaća podatke s adrese iz data-url (akcija Statistika) i crta ih Chart.js-om. *@
+<div class="row g-4" id="grafovi" data-url="@Url.Action("Statistika", new { sezonaId = Model.Sezona.Id })">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Bodovi po momčadi</div>
+            <div class="card-body">
+                <div class="graf-okvir"><canvas id="graf-bodovi" role="img" aria-label="Bodovi po momčadi"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Golovi po kolu</div>
+            <div class="card-body">
+                <div class="graf-okvir"><canvas id="graf-golovi" role="img" aria-label="Golovi po kolu"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.js"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

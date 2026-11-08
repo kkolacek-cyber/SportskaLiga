@@ -1,0 +1,39 @@
+@* Potvrda brisanja utakmice (samo Administrator). Zajedno s utakmicom brišu se i njezini golovi. *@
+@model Utakmica
+@{
+    ViewData["Title"] = "Brisanje utakmice";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index" asp-route-sezonaId="@Model.SezonaId">Utakmice</a></li>
+        <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.Id">@Model.Domacin?.Naziv &ndash; @Model.Gost?.Naziv</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Brisanje</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h1 class="h4 text-danger">Obrisati utakmicu @Model.Domacin?.Naziv &ndash; @Model.Gost?.Naziv?</h1>
+                <p>
+                    @(Model.Kolo). kolo, @Kalendar.ULokalno(Model.Pocetak).ToString("dd.MM.yyyy. HH:mm").
+                    @if (Model.Status == StatusUtakmice.Odigrana)
+                    {
+                        <strong>Utakmica je odigrana (@Model.Rezultat) – brisanjem nestaju i njezini golovi (@Model.Golovi.Count), a tablica se mijenja.</strong>
+                    }
+                </p>
+                <p class="mb-3">Ova radnja se ne može poništiti.</p>
+
+                <form method="post">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">Obriši</button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

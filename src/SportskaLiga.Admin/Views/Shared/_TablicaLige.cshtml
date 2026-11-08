@@ -1,0 +1,45 @@
+@* Tablica lige – zajednički partial (nadzorna ploča). Model je već izračunata tablica (Logika/IzracunTablice). *@
+@model IReadOnlyList<TablicaRed>
+
+@if (Model.Count == 0)
+{
+    <div class="card-body text-muted">U sezoni nema prijavljenih momčadi.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 tablica-lige">
+            <thead class="table-light">
+                <tr>
+                    <th class="text-end">#</th>
+                    <th>Momčad</th>
+                    <th class="text-center" title="Odigrano">OU</th>
+                    <th class="text-center" title="Pobjede">P</th>
+                    <th class="text-center" title="Neriješeno">N</th>
+                    <th class="text-center" title="Porazi">I</th>
+                    <th class="text-center" title="Golovi">Gol.</th>
+                    <th class="text-center" title="Gol-razlika">+/-</th>
+                    <th class="text-center">Bod.</th>
+                    <th class="d-none d-md-table-cell">Forma</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var red in Model)
+                {
+                    <tr>
+                        <td class="text-end fw-semibold">@red.Pozicija.</td>
+                        <td><a asp-controller="Momcadi" asp-action="Details" asp-route-id="@red.MomcadId" class="text-decoration-none">@red.Momcad</a></td>
+                        <td class="text-center">@red.Odigrano</td>
+                        <td class="text-center">@red.Pobjede</td>
+                        <td class="text-center">@red.Nerijeseno</td>
+                        <td class="text-center">@red.Porazi</td>
+                        <td class="text-center text-nowrap">@red.GoloviDani:@red.GoloviPrimljeni</td>
+                        <td class="text-center">@(red.GolRazlika > 0 ? "+" : "")@red.GolRazlika</td>
+                        <td class="text-center fw-bold">@red.Bodovi</td>
+                        <td class="d-none d-md-table-cell"><forma niz="@red.Forma" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,76 @@
+@* Isti obrazac za dodavanje i uređivanje korisnika; pri uređivanju prazna lozinka znači "ne mijenjaj". *@
+@model KorisnikFormViewModel
+@{
+    var novi = Model.Id is null;
+    ViewData["Title"] = novi ? "Novi korisnik" : "Uređivanje korisnika";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Korisnici</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@(novi ? "Dodavanje" : "Uređivanje")</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+                <form method="post" novalidate autocomplete="off">
+                    <input asp-for="Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" type="email" class="form-control" autocomplete="off" autofocus />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ImePrezime" class="form-label"></label>
+                        <input asp-for="ImePrezime" class="form-control" />
+                        <span asp-validation-for="ImePrezime" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Uloga" class="form-label"></label>
+                        @* Vlastitu ulogu nije moguće mijenjati: polje je onemogućeno, a vrijednost se šalje skrivenim poljem. *@
+                        <select asp-for="Uloga" asp-items="Model.Uloge" class="form-select" disabled="@Model.JeTrenutni"></select>
+                        @if (Model.JeTrenutni)
+                        {
+                            <input type="hidden" name="@nameof(Model.Uloga)" value="@Model.Uloga" />
+                            <div class="form-text">Ne možete promijeniti vlastitu ulogu.</div>
+                        }
+                        <span asp-validation-for="Uloga" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Lozinka" class="form-label"></label>
+                        <input asp-for="Lozinka" class="form-control" autocomplete="new-password" />
+                        <div class="form-text">
+                            @(novi ? "Najmanje 6 znakova, uz veliko i malo slovo, znamenku i poseban znak." : "Ostavite prazno ako ne mijenjate lozinku.")
+                        </div>
+                        <span asp-validation-for="Lozinka" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PotvrdaLozinke" class="form-label"></label>
+                        <input asp-for="PotvrdaLozinke" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="PotvrdaLozinke" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Spremi</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

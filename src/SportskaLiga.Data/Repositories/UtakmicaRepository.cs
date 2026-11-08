@@ -48,6 +48,12 @@ public class UtakmicaRepository : Repository<Utakmica>, IUtakmicaRepository
             query = query.Where(u => u.DelegatId == filter.DelegatId);
         }
 
+        if (filter.SamoCekajuRezultat)
+        {
+            var sada = DateTime.UtcNow;
+            query = query.Where(u => u.Status == StatusUtakmice.Zakazana && u.Pocetak < sada);
+        }
+
         var ukupno = await query.CountAsync(ct);
         var (stranica, velicina) = Upiti.NormalizirajStranicenje(filter.Stranica, filter.VelicinaStranice);
 
@@ -155,6 +161,13 @@ public class UtakmicaRepository : Repository<Utakmica>, IUtakmicaRepository
             .GroupBy(u => u.Status)
             .Select(g => new { Status = g.Key, Broj = g.Count() })
             .ToDictionaryAsync(x => x.Status, x => x.Broj, ct);
+
+    public async Task<IReadOnlyDictionary<int, int>> GoloviPoKoluAsync(int sezonaId, CancellationToken ct = default)
+        => await Context.Utakmice.AsNoTracking()
+            .Where(u => u.SezonaId == sezonaId && u.Status == StatusUtakmice.Odigrana)
+            .GroupBy(u => u.Kolo)
+            .Select(g => new { Kolo = g.Key, Golovi = g.Sum(u => (u.GoloviDomacin ?? 0) + (u.GoloviGost ?? 0)) })
+            .ToDictionaryAsync(x => x.Kolo, x => x.Golovi, ct);
 
     // ------------------------------------------------------------------ pravila
 

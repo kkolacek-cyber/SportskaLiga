@@ -1,0 +1,212 @@
+/* Administracija lige – vlastiti izgled povrh Bootstrapa: tamnozelena (travnjak) i žuta (kartoni) kao naglasci. */
+:root {
+  --liga-zelena: #14532d;
+  --liga-zelena-svijetla: #15803d;
+  --liga-zuta: #facc15;
+  --liga-pozadina: #f3f6f4;
+  --bs-primary: #15803d;
+  --bs-primary-rgb: 21, 128, 61;
+  --bs-link-color: #15803d;
+  --bs-link-color-rgb: 21, 128, 61;
+  --bs-link-hover-color: #14532d;
+}
+
+html {
+  font-size: 15px;
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  background: var(--liga-pozadina);
+  margin-bottom: 60px;
+}
+
+/* Gumbi u boji lige (Bootstrap 5.3 čita varijable --bs-btn-*). */
+.btn-primary {
+  --bs-btn-bg: var(--liga-zelena-svijetla);
+  --bs-btn-border-color: var(--liga-zelena-svijetla);
+  --bs-btn-hover-bg: var(--liga-zelena);
+  --bs-btn-hover-border-color: var(--liga-zelena);
+  --bs-btn-active-bg: var(--liga-zelena);
+  --bs-btn-active-border-color: var(--liga-zelena);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--liga-zelena-svijetla);
+  --bs-btn-border-color: var(--liga-zelena-svijetla);
+  --bs-btn-hover-bg: var(--liga-zelena-svijetla);
+  --bs-btn-hover-border-color: var(--liga-zelena-svijetla);
+  --bs-btn-active-bg: var(--liga-zelena);
+}
+
+.pagination {
+  --bs-pagination-color: var(--liga-zelena-svijetla);
+  --bs-pagination-active-bg: var(--liga-zelena-svijetla);
+  --bs-pagination-active-border-color: var(--liga-zelena-svijetla);
+}
+
+/* Vidljiv okvir fokusa za rad tipkovnicom (pristupačnost). */
+.btn:focus-visible, .form-control:focus, .form-select:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 .2rem rgba(21, 128, 61, .35);
+  border-color: var(--liga-zelena-svijetla);
+}
+
+/* Navigacija: tamnozelena traka sa žutom crtom (kao linija igrališta). */
+.navbar-liga {
+  background: var(--liga-zelena);
+  border-bottom: 4px solid var(--liga-zuta);
+}
+
+.navbar-liga .navbar-brand {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.navbar-brand-dodatak {
+  color: var(--liga-zuta);
+  font-weight: 400;
+}
+
+.navbar-liga .nav-link.active {
+  color: var(--liga-zuta) !important;
+}
+
+.navbar-liga .navbar-text {
+  color: rgba(255, 255, 255, .75);
+}
+
+.badge-uloga {
+  background: var(--liga-zuta);
+  color: #1c1917;
+}
+
+/* Logo: lopta nacrtana CSS-om (bez slike). */
+.logo-lopta {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 0 45%, #d6d3d1 46% 100%);
+  border: 2px solid #1c1917;
+}
+
+.card {
+  border: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+.card-header {
+  background: #fff;
+  font-weight: 600;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  line-height: 60px;
+  white-space: nowrap;
+}
+
+/* Nadzorna ploča: kartice s brojevima i okvir grafova. */
+.brojka {
+  border-left: .3rem solid var(--bs-secondary);
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+
+a.brojka:hover {
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .12);
+  transform: translateY(-2px);
+}
+
+.brojka-warning { border-left-color: var(--bs-warning); }
+.brojka-info { border-left-color: var(--bs-info); }
+.brojka-primary { border-left-color: var(--liga-zelena-svijetla); }
+.brojka-success { border-left-color: var(--bs-success); }
+.brojka-danger { border-left-color: var(--bs-danger); }
+
+.graf-okvir {
+  position: relative;
+  height: 300px;
+}
+
+/* Tablica lige i forma (zadnjih 5 rezultata). */
+.tablica-lige tbody tr:first-child td {
+  background: rgba(250, 204, 21, .15);
+}
+
+.forma {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.forma span {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  font-size: .7rem;
+  font-weight: 700;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forma-p { background: #16a34a; }
+.forma-n { background: #a8a29e; }
+.forma-i { background: #dc2626; }
+
+/* Rezultat u popisu i "semafor" na detaljima utakmice. */
+.rezultat {
+  display: inline-block;
+  min-width: 3.5rem;
+  padding: .15rem .5rem;
+  border-radius: .35rem;
+  background: #1c1917;
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.semafor {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.semafor-momcad {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.semafor-rezultat {
+  font-size: 2.6rem;
+  font-weight: 800;
+  padding: .25rem 1.25rem;
+  border-radius: .5rem;
+  background: #1c1917;
+  color: var(--liga-zuta);
+  font-variant-numeric: tabular-nums;
+}
+
+.semafor-unos input {
+  width: 5rem;
+}
+
+@media (max-width: 575.98px) {
+  .semafor {
+    gap: .5rem;
+  }
+
+  .semafor-momcad {
+    font-size: 1rem;
+  }
+
+  .semafor-rezultat {
+    font-size: 1.8rem;
+    padding: .2rem .6rem;
+  }
+}

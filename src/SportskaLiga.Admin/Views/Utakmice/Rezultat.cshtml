@@ -1,0 +1,118 @@
+@* Upis rezultata i strijelaca. Broj redaka sa strijelcima prati zbroj golova (rezultat.js);
+   bez JavaScripta obrazac i dalje radi, a poslužitelj javlja ako se broj strijelaca ne slaže s rezultatom. *@
+@model RezultatViewModel
+@{
+    var u = Model.Utakmica!;
+    ViewData["Title"] = "Upis rezultata";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index" asp-route-sezonaId="@u.SezonaId">Utakmice</a></li>
+        <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@u.Id">@u.Domacin?.Naziv &ndash; @u.Gost?.Naziv</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Rezultat</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="h4 mb-1">Upis rezultata</h1>
+                <p class="text-muted">@(u.Kolo). kolo · @Kalendar.ULokalno(u.Pocetak).ToString("dd.MM.yyyy. HH:mm") · @u.Lokacija</p>
+
+                <form method="post" novalidate id="rezultat-obrazac">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    @* Rezultat: dva broja između naziva momčadi. *@
+                    <div class="semafor semafor-unos mb-2">
+                        <label asp-for="Unos.GoloviDomacin" class="semafor-momcad text-end">@u.Domacin?.Naziv</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input asp-for="Unos.GoloviDomacin" class="form-control form-control-lg text-center" min="0" max="99" />
+                            <span class="fs-3">:</span>
+                            <input asp-for="Unos.GoloviGost" class="form-control form-control-lg text-center" min="0" max="99" />
+                        </div>
+                        <label asp-for="Unos.GoloviGost" class="semafor-momcad">@u.Gost?.Naziv</label>
+                    </div>
+                    <div class="text-center mb-4">
+                        <span asp-validation-for="Unos.GoloviDomacin" class="text-danger d-block"></span>
+                        <span asp-validation-for="Unos.GoloviGost" class="text-danger d-block"></span>
+                    </div>
+
+                    <h2 class="h5">Strijelci</h2>
+                    <p class="text-muted small mb-2">
+                        Za svaki gol odaberite strijelca i minutu. Autogol označite kod igrača koji ga je zabio – gol se pribraja protivniku.
+                    </p>
+                    <span asp-validation-for="Unos.Golovi" class="text-danger d-block mb-2"></span>
+
+                    <div id="golovi">
+                        @for (var i = 0; i < Model.Unos.Golovi.Count; i++)
+                        {
+                            <div class="row g-2 align-items-start mb-2 gol-red">
+                                <div class="col-sm-7">
+                                    <select asp-for="Unos.Golovi[i].IgracId" asp-items="Model.Igraci" class="form-select" aria-label="Strijelac">
+                                        <option value="0">Odaberite strijelca&hellip;</option>
+                                    </select>
+                                    <span asp-validation-for="Unos.Golovi[i].IgracId" class="text-danger small"></span>
+                                </div>
+                                <div class="col-5 col-sm-2">
+                                    <input asp-for="Unos.Golovi[i].Minuta" class="form-control" placeholder="min." aria-label="Minuta" />
+                                    <span asp-validation-for="Unos.Golovi[i].Minuta" class="text-danger small"></span>
+                                </div>
+                                <div class="col-7 col-sm-3 pt-2">
+                                    @* Checkbox ručno (bez asp-for): asp-for bi na kraj obrasca dodao skriveno polje "false" s indeksom,
+                                       a ono bi nakon brisanja retka u JavaScriptu stvorilo prazan "gol" s tim indeksom. *@
+                                    <div class="form-check">
+                                        <input type="checkbox" name="Unos.Golovi[@i].Autogol" value="true" class="form-check-input"
+                                               id="autogol-@i" checked="@Model.Unos.Golovi[i].Autogol" />
+                                        <label class="form-check-label" for="autogol-@i">Autogol</label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @* Predložak jednog retka: rezultat.js ga klonira i zamjenjuje __i__ rednim brojem retka. *@
+                    <template id="gol-predlozak">
+                        <div class="row g-2 align-items-start mb-2 gol-red">
+                            <div class="col-sm-7">
+                                <select name="Unos.Golovi[__i__].IgracId" class="form-select" aria-label="Strijelac">
+                                    <option value="0">Odaberite strijelca&hellip;</option>
+                                    @foreach (var grupa in Model.Igraci.GroupBy(x => x.Group?.Name))
+                                    {
+                                        <optgroup label="@grupa.Key">
+                                            @foreach (var igrac in grupa)
+                                            {
+                                                <option value="@igrac.Value">@igrac.Text</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-5 col-sm-2">
+                                <input type="number" name="Unos.Golovi[__i__].Minuta" min="1" max="120" class="form-control" placeholder="min." aria-label="Minuta" />
+                            </div>
+                            <div class="col-7 col-sm-3 pt-2">
+                                <div class="form-check">
+                                    <input type="checkbox" name="Unos.Golovi[__i__].Autogol" value="true" class="form-check-input" id="autogol-__i__" />
+                                    <label class="form-check-label" for="autogol-__i__">Autogol</label>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <p id="golovi-prazno" class="text-muted @(Model.Unos.Golovi.Count > 0 ? "d-none" : "")">Utakmica bez golova (0:0) nema strijelaca.</p>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Spremi rezultat</button>
+                        <a asp-action="Details" asp-route-id="@u.Id" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/rezultat.js" asp-append-version="true"></script>
+}

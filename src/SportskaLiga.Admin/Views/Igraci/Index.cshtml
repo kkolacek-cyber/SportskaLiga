@@ -1,0 +1,113 @@
+@* Popis igrača s filtrima (tekst, momčad, pozicija) i straničenjem. *@
+@model IgraciIndexViewModel
+@{
+    ViewData["Title"] = "Igrači";
+    var rezultat = Model.Rezultat;
+    // Aktivni filteri prenose se u veze straničenja, da filter ostane kad se promijeni stranica.
+    var parametri = new Dictionary<string, string?>();
+    if (!string.IsNullOrWhiteSpace(Model.Tekst)) parametri["tekst"] = Model.Tekst;
+    if (Model.MomcadId is not null) parametri["momcadId"] = Model.MomcadId.ToString();
+    if (Model.Pozicija is not null) parametri["pozicija"] = Model.Pozicija.ToString();
+
+    var pager = new PagerViewModel
+    {
+        Stranica = rezultat.Stranica,
+        UkupnoStranica = rezultat.UkupnoStranica,
+        Kontroler = "Igraci",
+        Parametri = parametri
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2 mb-0">Igrači</h1>
+    @if (User.IsInRole(Roles.Administrator))
+    {
+        <a asp-action="Create" asp-route-momcadId="@Model.MomcadId" class="btn btn-primary">Registriraj igrača</a>
+    }
+</div>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label asp-for="Tekst" class="form-label"></label>
+            <input asp-for="Tekst" class="form-control" placeholder="Ime ili prezime" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="MomcadId" class="form-label"></label>
+            <select asp-for="MomcadId" asp-items="Model.Momcadi" class="form-select">
+                <option value="">Sve momčadi</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Pozicija" class="form-label"></label>
+            <select asp-for="Pozicija" asp-items="Html.GetEnumSelectList<Pozicija>()" class="form-select">
+                <option value="">Sve pozicije</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-fill">Traži</button>
+            @if (Model.ImaFiltera)
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary" title="Očisti filtere">&times;</a>
+            }
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between">
+        <span>Ukupno: <strong>@rezultat.UkupnoStavki</strong></span>
+        <span class="text-muted small">Stranica @rezultat.Stranica od @Math.Max(rezultat.UkupnoStranica, 1)</span>
+    </div>
+
+    @if (rezultat.Items.Count == 0)
+    {
+        <div class="card-body text-muted">Nema igrača koji odgovaraju filtrima.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Igrač</th>
+                        <th>Momčad</th>
+                        <th class="text-end">Br.</th>
+                        <th>Pozicija</th>
+                        <th class="d-none d-md-table-cell">Rođen</th>
+                        @if (User.IsInRole(Roles.Administrator))
+                        {
+                            <th class="text-end">Radnje</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in rezultat.Items)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@i.Prezime, @i.Ime</td>
+                            <td><a asp-controller="Momcadi" asp-action="Details" asp-route-id="@i.MomcadId" class="text-decoration-none">@i.Momcad?.Naziv</a></td>
+                            <td class="text-end">@i.BrojDresa</td>
+                            <td><status-badge value="@i.Pozicija" /></td>
+                            <td class="d-none d-md-table-cell">@i.DatumRodenja.ToString("dd.MM.yyyy.")</td>
+                            @if (User.IsInRole(Roles.Administrator))
+                            {
+                                <td class="text-end text-nowrap">
+                                    <a asp-action="Edit" asp-route-id="@i.Id" class="btn btn-sm btn-outline-primary">Uredi</a>
+                                    <a asp-action="Delete" asp-route-id="@i.Id" class="btn btn-sm btn-outline-danger">Obriši</a>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (rezultat.UkupnoStranica > 1)
+    {
+        <div class="card-footer">
+            <partial name="_Pager" model="pager" />
+        </div>
+    }
+</div>

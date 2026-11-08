@@ -1,0 +1,37 @@
+@* Potvrda brisanja igrača (samo Administrator). Igrač koji je zabio gol ne može se obrisati (Restrict). *@
+@model Igrac
+@{
+    ViewData["Title"] = "Brisanje igrača";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Momcadi" asp-action="Details" asp-route-id="@Model.MomcadId">@Model.Momcad?.Naziv</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Brisanje igrača</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h1 class="h4 text-danger">Obrisati igrača @Model.PunoIme (#@Model.BrojDresa)?</h1>
+                @if (Model.Golovi.Count > 0)
+                {
+                    <div class="alert alert-warning">
+                        Igrač je zabio @Model.Golovi.Count gol(ova), pa ga baza neće dopustiti obrisati – lista strijelaca mora ostati točna.
+                    </div>
+                }
+                <p class="mb-3">Ova radnja se ne može poništiti.</p>
+
+                <form method="post">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">Obriši</button>
+                        <a asp-controller="Momcadi" asp-action="Details" asp-route-id="@Model.MomcadId" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

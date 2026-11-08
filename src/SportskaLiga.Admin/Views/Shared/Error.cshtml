@@ -1,0 +1,14 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Pogreška";
+}
+
+<h1 class="text-danger">Dogodila se pogreška.</h1>
+<p class="lead">Zahtjev nije mogao biti obrađen. Pokušajte ponovno ili se vratite na <a asp-controller="Home" asp-action="Index">nadzornu ploču</a>.</p>
+
+@if (Model.ShowRequestId)
+{
+    <p class="text-muted">
+        Oznaka zahtjeva: <code>@Model.RequestId</code>
+    </p>
+}

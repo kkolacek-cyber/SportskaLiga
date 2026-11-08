@@ -1,0 +1,32 @@
+@model PagerViewModel
+
+@* Linkovi imaju pravi href (radi i bez JavaScripta); data-stranica koristi skripta za asinkrono učitavanje (utakmice.js). *@
+@if (Model.UkupnoStranica > 1)
+{
+    <nav aria-label="Straničenje">
+        <ul class="pagination justify-content-center flex-wrap mb-0">
+            <li class="page-item @(Model.Stranica <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-controller="@Model.Kontroler" asp-action="@Model.Akcija" asp-all-route-data="@Model.ZaStranicu(Model.Stranica - 1)" data-stranica="@(Model.Stranica - 1)">Prethodna</a>
+            </li>
+
+            @* Prikazane brojeve daje ViewModel; null znači tri točkice između udaljenih stranica. *@
+            @foreach (var broj in Model.Prikazane())
+            {
+                if (broj is null)
+                {
+                    <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                }
+                else
+                {
+                    <li class="page-item @(broj == Model.Stranica ? "active" : "")" aria-current="@(broj == Model.Stranica ? "page" : null)">
+                        <a class="page-link" asp-controller="@Model.Kontroler" asp-action="@Model.Akcija" asp-all-route-data="@Model.ZaStranicu(broj.Value)" data-stranica="@broj">@broj</a>
+                    </li>
+                }
+            }
+
+            <li class="page-item @(Model.Stranica >= Model.UkupnoStranica ? "disabled" : "")">
+                <a class="page-link" asp-controller="@Model.Kontroler" asp-action="@Model.Akcija" asp-all-route-data="@Model.ZaStranicu(Model.Stranica + 1)" data-stranica="@(Model.Stranica + 1)">Sljedeća</a>
+            </li>
+        </ul>
+    </nav>
+}

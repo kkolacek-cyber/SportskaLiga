@@ -1,0 +1,144 @@
+@* Detalji sezone: prijavljene momčadi (M:N), prijava nove momčadi, aktivna sezona te generiranje i brisanje rasporeda. *@
+@model SezonaDetailsViewModel
+@{
+    var s = Model.Sezona;
+    ViewData["Title"] = $"Sezona {s.Naziv}";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Sezone</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@s.Naziv</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h2 mb-0">
+        Sezona @s.Naziv
+        @if (s.Aktivna)
+        {
+            <span class="badge badge-uloga fs-6 align-middle">aktivna</span>
+        }
+    </h1>
+    <div class="d-flex flex-wrap gap-2">
+        @if (!s.Aktivna)
+        {
+            <form asp-action="Aktiviraj" asp-route-id="@s.Id" method="post">
+                <button type="submit" class="btn btn-outline-primary">Postavi kao aktivnu</button>
+            </form>
+        }
+        <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-outline-primary">Uredi</a>
+        <a asp-action="Delete" asp-route-id="@s.Id" class="btn btn-outline-danger">Obriši</a>
+    </div>
+</div>
+
+<p class="text-muted">
+    @s.DatumPocetka.ToString("dd.MM.yyyy.") &ndash; @s.DatumZavrsetka.ToString("dd.MM.yyyy.")
+    · pobjeda @s.BodoviZaPobjedu, neriješeno @s.BodoviZaNerijeseno bod(a)
+</p>
+
+<div class="row g-4">
+    @* Prijavljene momčadi (spojna tablica SezonaMomcad). *@
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">Prijavljene momčadi (@Model.Momcadi.Count)</div>
+            @if (Model.Momcadi.Count == 0)
+            {
+                <div class="card-body text-muted">U sezonu još nije prijavljena nijedna momčad.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var m in Model.Momcadi)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a asp-controller="Momcadi" asp-action="Details" asp-route-id="@m.Id" class="text-decoration-none">@m.Naziv</a>
+                            @if (!Model.ImaRaspored)
+                            {
+                                <form asp-action="Odjavi" asp-route-id="@s.Id" method="post">
+                                    <input type="hidden" name="momcadId" value="@m.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Odjavi</button>
+                                </form>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            @if (!Model.ImaRaspored && Model.SlobodneMomcadi.Any())
+            {
+                <div class="card-footer">
+                    <form asp-action="Prijavi" asp-route-id="@s.Id" method="post" class="d-flex gap-2">
+                        <select name="momcadId" asp-items="Model.SlobodneMomcadi" class="form-select" aria-label="Momčad"></select>
+                        <button type="submit" class="btn btn-primary text-nowrap">Prijavi</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* Raspored: generiranje dok ne postoji, inače pregled i (ako ništa nije odigrano) brisanje. *@
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header">Raspored</div>
+            <div class="card-body">
+                @if (Model.ImaRaspored)
+                {
+                    <p>
+                        Raspored ima <strong>@Model.BrojUtakmica</strong> utakmica, od kojih je odigrano <strong>@Model.BrojOdigranih</strong>.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-controller="Utakmice" asp-action="Index" asp-route-sezonaId="@s.Id" asp-route-samoMoje="false" class="btn btn-primary">Prikaži utakmice</a>
+                        @if (Model.BrojOdigranih == 0)
+                        {
+                            <form asp-action="ObrisiRaspored" asp-route-id="@s.Id" method="post">
+                                <button type="submit" class="btn btn-outline-danger">Obriši raspored</button>
+                            </form>
+                        }
+                    </div>
+                    @if (Model.BrojOdigranih > 0)
+                    {
+                        <p class="form-text mb-0 mt-2">Raspored se ne može obrisati jer su neke utakmice već odigrane.</p>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">
+                        Generira se raspored "svatko sa svakim" za sve prijavljene momčadi (Bergerove tablice).
+                        Utakmice jednog kola igraju se istog dana, na igralištu domaćina; sudac i delegat dodjeljuju se zatim po utakmici.
+                    </p>
+
+                    <form asp-action="GenerirajRaspored" asp-route-id="@s.Id" method="post" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Raspored.PrviTermin" class="form-label"></label>
+                                <input asp-for="Raspored.PrviTermin" class="form-control" />
+                                <span asp-validation-for="Raspored.PrviTermin" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Raspored.RazmakDana" class="form-label"></label>
+                                <input asp-for="Raspored.RazmakDana" class="form-control" />
+                                <span asp-validation-for="Raspored.RazmakDana" class="text-danger"></span>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input asp-for="Raspored.DvostrukiKrug" class="form-check-input" />
+                                    <label asp-for="Raspored.DvostrukiKrug" class="form-check-label"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3" disabled="@(Model.Momcadi.Count < 2)">Generiraj raspored</button>
+                        @if (Model.Momcadi.Count < 2)
+                        {
+                            <p class="form-text mb-0">Najprije prijavite barem dvije momčadi.</p>
+                        }
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

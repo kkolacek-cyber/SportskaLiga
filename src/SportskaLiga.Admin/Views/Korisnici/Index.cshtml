@@ -1,0 +1,46 @@
+@* Popis korisnika administracije (samo Administrator): uloga, je li zaključan i oznaka "vi" za vlastiti račun. *@
+@model IReadOnlyList<KorisnikListItem>
+@{
+    ViewData["Title"] = "Korisnici";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2 mb-0">Korisnici</h1>
+    <a asp-action="Create" class="btn btn-primary">Dodaj korisnika</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>E-mail</th>
+                    <th>Ime i prezime</th>
+                    <th>Uloga</th>
+                    <th class="text-end">Radnje</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var korisnik in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            @korisnik.Email
+                            @if (korisnik.JeTrenutni) { <span class="badge text-bg-light border ms-1">vi</span> }
+                            @if (korisnik.Zakljucan) { <span class="badge text-bg-warning ms-1">zaključan</span> }
+                        </td>
+                        <td>@korisnik.ImePrezime</td>
+                        <td><span class="badge @(korisnik.Uloga == Roles.Administrator ? "text-bg-dark" : "text-bg-secondary")">@korisnik.Uloga</span></td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Edit" asp-route-id="@korisnik.Id" class="btn btn-sm btn-outline-primary">Uredi</a>
+                            @if (!korisnik.JeTrenutni)
+                            {
+                                <a asp-action="Delete" asp-route-id="@korisnik.Id" class="btn btn-sm btn-outline-danger">Obriši</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,67 @@
+@* Popis utakmica: stranica je samo okvir s filtrima, a tablicu učitava utakmice.js (Fetch API) pozivom na akciju Lista. *@
+@model UtakmiceIndexViewModel
+@{
+    ViewData["Title"] = "Utakmice";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2 mb-0">Utakmice</h1>
+    @if (User.IsInRole(Roles.Administrator))
+    {
+        <a asp-action="Create" asp-route-sezonaId="@Model.SezonaId" class="btn btn-primary">Dodaj utakmicu</a>
+    }
+</div>
+
+@* Filteri: promjena bilo kojeg polja osvježava tablicu bez ponovnog učitavanja stranice (utakmice.js).
+   Obrazac ima i gumb "Traži" i action, pa radi i bez JavaScripta (obični GET). *@
+<form method="get" asp-action="Index" id="utakmice-filter" class="card card-body mb-3">
+    <div class="row g-3 align-items-end">
+        <div class="col-sm-6 col-lg-3">
+            <label for="sezonaId" class="form-label">Sezona</label>
+            <select id="sezonaId" name="sezonaId" asp-items="Model.Sezone" class="form-select"
+                    data-kola-url="@Url.Action("Kola")"></select>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label for="kolo" class="form-label">Kolo</label>
+            <select id="kolo" name="kolo" asp-items="Model.Kola" class="form-select">
+                <option value="">Sva kola</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" asp-items="Html.GetEnumSelectList<StatusUtakmice>()" class="form-select">
+                <option value="">Svi statusi</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="samoMoje" name="samoMoje" value="true" checked="@Model.SamoMoje" />
+                @* Neoznačen checkbox se ne šalje; skriveno polje (iza njega) tada pošalje "false" (isti trik koristi i asp-for). *@
+                <input type="hidden" name="samoMoje" value="false" />
+                <label class="form-check-label" for="samoMoje">Samo utakmice kojima sam delegat</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="samoCekajuRezultat" name="samoCekajuRezultat" value="true" checked="@Model.SamoCekajuRezultat" />
+                <label class="form-check-label" for="samoCekajuRezultat">Samo one koje čekaju rezultat</label>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <button type="submit" class="btn btn-primary w-100">Traži</button>
+        </div>
+    </div>
+</form>
+
+<div id="utakmice-poruke" aria-live="polite"></div>
+
+@* Ovdje utakmice.js umeće HTML fragment iz akcije Lista (adresa u data-url). *@
+<div id="utakmice-lista" data-url="@Url.Action("Lista")">
+    <div class="text-center text-muted py-5">Učitavanje&hellip;</div>
+</div>
+
+@section Scripts {
+    <script>
+        // Početni status iz adrese (npr. s nadzorne ploče) – Razor ga ne može postaviti u <select> s enum popisom.
+        document.getElementById("status").value = "@(Model.Status is null ? "" : ((int)Model.Status).ToString())";
+    </script>
+    <script src="~/js/utakmice.js" asp-append-version="true"></script>
+}

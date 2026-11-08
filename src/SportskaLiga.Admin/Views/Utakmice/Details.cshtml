@@ -1,0 +1,103 @@
+@* Detalji utakmice: rezultat, strijelci po minutama, sudac i delegat te radnje ovisno o ulozi. *@
+@model UtakmicaDetailsViewModel
+@{
+    var u = Model.Utakmica;
+    ViewData["Title"] = $"{u.Domacin?.Naziv} – {u.Gost?.Naziv}";
+    var admin = User.IsInRole(Roles.Administrator);
+    var pocela = u.Pocetak < DateTime.UtcNow;
+    var cekaRezultat = u.Status == StatusUtakmice.Zakazana && pocela;
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index" asp-route-sezonaId="@u.SezonaId">Utakmice</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@(u.Kolo). kolo</li>
+    </ol>
+</nav>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="text-center text-muted small mb-2">
+            Sezona @u.Sezona?.Naziv · @(u.Kolo). kolo · @Kalendar.ULokalno(u.Pocetak).ToString("dddd, dd.MM.yyyy. HH:mm") · @(u.Lokacija ?? "igralište nije određeno")
+        </div>
+        <div class="semafor">
+            <div class="semafor-momcad text-end">@u.Domacin?.Naziv</div>
+            <div class="semafor-rezultat">@u.Rezultat</div>
+            <div class="semafor-momcad">@u.Gost?.Naziv</div>
+        </div>
+        <div class="text-center mt-2"><status-badge value="@u.Status" ceka-rezultat="@cekaRezultat" class="fs-6" /></div>
+        @if (!string.IsNullOrEmpty(u.Napomena))
+        {
+            <p class="text-center text-muted mt-2 mb-0">@u.Napomena</p>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header">Strijelci</div>
+            @if (u.Golovi.Count == 0)
+            {
+                <div class="card-body text-muted">@(u.Status == StatusUtakmice.Odigrana ? "Utakmica je završila bez golova." : "Rezultat još nije upisan.")</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var g in u.Golovi.OrderBy(g => g.Minuta))
+                    {
+                        var zaDomacina = g.MomcadId == u.DomacinId;
+                        <li class="list-group-item d-flex gap-3 @(zaDomacina ? "" : "flex-row-reverse text-end")">
+                            <span class="badge text-bg-dark align-self-center">@(g.Minuta)'</span>
+                            <span class="flex-fill">
+                                @g.Igrac?.PunoIme
+                                @if (g.Autogol)
+                                {
+                                    <span class="badge text-bg-secondary ms-1">autogol</span>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">Službene osobe i radnje</div>
+            <div class="card-body">
+                <dl class="row mb-3">
+                    <dt class="col-sm-4">Sudac</dt>
+                    <dd class="col-sm-8">@(u.Sudac?.PunoIme ?? "nije određen")</dd>
+                    <dt class="col-sm-4">Delegat</dt>
+                    <dd class="col-sm-8">@(Model.Delegat ?? "nije određen")</dd>
+                </dl>
+
+                <div class="d-flex flex-wrap gap-2">
+                    @if (Model.SmijeUpisati && pocela && u.Status != StatusUtakmice.Odgodena)
+                    {
+                        <a asp-action="Rezultat" asp-route-id="@u.Id" class="btn @(cekaRezultat ? "btn-warning" : "btn-outline-primary")">
+                            @(u.Status == StatusUtakmice.Odigrana ? "Ispravi rezultat" : "Upiši rezultat")
+                        </a>
+                    }
+                    @if (admin)
+                    {
+                        <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-outline-primary">Uredi</a>
+                        @if (u.Status == StatusUtakmice.Odigrana)
+                        {
+                            @* Poništavanje briše rezultat i golove; utakmica se vraća u status "Zakazana". *@
+                            <form asp-action="PonistiRezultat" asp-route-id="@u.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger">Poništi rezultat</button>
+                            </form>
+                        }
+                        <a asp-action="Delete" asp-route-id="@u.Id" class="btn btn-outline-danger">Obriši</a>
+                    }
+                </div>
+                @if (Model.SmijeUpisati && !pocela)
+                {
+                    <p class="text-muted small mt-3 mb-0">Rezultat se može upisati nakon početka utakmice.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,70 @@
+@* Isti obrazac za registraciju (Id = 0) i uređivanje momčadi. *@
+@model MomcadFormViewModel
+@{
+    var nova = Model.Id == 0;
+    ViewData["Title"] = nova ? "Registracija momčadi" : "Uređivanje momčadi";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Momčadi</a></li>
+        @if (!nova)
+        {
+            <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.Id">@Model.Naziv</a></li>
+        }
+        <li class="breadcrumb-item active" aria-current="page">@(nova ? "Registracija" : "Uređivanje")</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+                <form method="post" novalidate>
+                    <input asp-for="Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label asp-for="Naziv" class="form-label"></label>
+                            <input asp-for="Naziv" class="form-control" autofocus />
+                            <span asp-validation-for="Naziv" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="Grad" class="form-label"></label>
+                            <input asp-for="Grad" class="form-control" />
+                            <span asp-validation-for="Grad" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-7">
+                            <label asp-for="Igraliste" class="form-label"></label>
+                            <input asp-for="Igraliste" class="form-control" />
+                            <div class="form-text">Postaje lokacija utakmica koje momčad igra kao domaćin.</div>
+                            <span asp-validation-for="Igraliste" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="GodinaOsnutka" class="form-label"></label>
+                            <input asp-for="GodinaOsnutka" class="form-control" />
+                            <span asp-validation-for="GodinaOsnutka" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="KontaktEmail" class="form-label"></label>
+                            <input asp-for="KontaktEmail" class="form-control" />
+                            <span asp-validation-for="KontaktEmail" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Spremi</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
