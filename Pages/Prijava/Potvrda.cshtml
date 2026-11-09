@@ -1,0 +1,74 @@
+@page "{kod}"
+@* Potvrda prijave i trenutni status (kod je u adresi: /Prijava/Potvrda/K7M2QX9A). *@
+@model SportskaLiga.Pages.Prijava.PotvrdaModel
+@{
+    var p = Model.Prijava;
+    ViewData["Title"] = $"Prijava {p.Kod}";
+    // Koraci obrade za vizualni prikaz napretka.
+    var obradena = p.Status != StatusPrijave.NaCekanju;
+    var zadnjiKorak = p.Status switch
+    {
+        StatusPrijave.Odobrena => "gotov",
+        StatusPrijave.Odbijena => "odbijen",
+        _ => ""
+    };
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        @if (Model.JeNova)
+        {
+            <div class="alert alert-success">
+                <h1 class="h4">Prijava je zaprimljena!</h1>
+                <p class="mb-0">Spremite kod prijave – s njim i e-mail adresom možete u svakom trenutku provjeriti status.</p>
+            </div>
+        }
+
+        <div class="card mb-4">
+            <div class="card-body text-center py-4">
+                <div class="text-muted small text-uppercase">Kod prijave</div>
+                <div class="kod-prijave">@p.Kod</div>
+                <status-badge value="@p.Status" class="fs-6 mt-2" />
+            </div>
+        </div>
+
+        <ol class="koraci mb-4">
+            <li class="gotov">Prijava poslana <span>@Kalendar.ULokalno(p.DatumPodnosenja).ToString("dd.MM.yyyy. HH:mm")</span></li>
+            <li class="@(obradena ? "gotov" : "trenutni")">Pregled vodstva lige</li>
+            <li class="@zadnjiKorak">
+                @(p.Status == StatusPrijave.Odbijena ? "Prijava odbijena" : "Momčad upisana u sezonu")
+                @if (p.DatumObrade is { } obrada)
+                {
+                    <span>@Kalendar.ULokalno(obrada).ToString("dd.MM.yyyy. HH:mm")</span>
+                }
+            </li>
+        </ol>
+
+        @if (!string.IsNullOrEmpty(p.OdgovorLige))
+        {
+            <div class="alert @(p.Status == StatusPrijave.Odbijena ? "alert-danger" : "alert-success")">
+                <strong>Odgovor lige:</strong> @p.OdgovorLige
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header"><h2 class="h5 mb-0">Podaci prijave</h2></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Momčad</dt>
+                    <dd class="col-sm-8">@p.NazivMomcadi (@p.Grad)</dd>
+                    <dt class="col-sm-4">Sezona</dt>
+                    <dd class="col-sm-8">@p.Sezona?.Naziv</dd>
+                    <dt class="col-sm-4">Kontakt osoba</dt>
+                    <dd class="col-sm-8">@p.KontaktOsoba</dd>
+                    <dt class="col-sm-4">Broj igrača</dt>
+                    <dd class="col-sm-8 mb-0">@p.BrojIgraca</dd>
+                </dl>
+            </div>
+        </div>
+
+        <p class="text-center mt-4">
+            <a asp-page="/Index">Natrag na početnu</a>
+        </p>
+    </div>
+</div>

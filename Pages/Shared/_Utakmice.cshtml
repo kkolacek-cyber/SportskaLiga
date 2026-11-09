@@ -1,0 +1,45 @@
+@* Popis utakmica grupiran po kolima (raspored, rezultati, stranica momčadi). Svaka utakmica vodi na svoje detalje. *@
+@model IReadOnlyList<Utakmica>
+@{
+    var sada = DateTime.UtcNow;
+}
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">Nema utakmica za odabrane filtre.</p>
+}
+else
+{
+    @foreach (var kolo in Model.GroupBy(u => u.Kolo))
+    {
+        <section class="kolo mb-4">
+            <h2 class="kolo-naslov">@(kolo.Key). kolo</h2>
+            <div class="list-group utakmice">
+                @foreach (var u in kolo)
+                {
+                    var pocetak = Kalendar.ULokalno(u.Pocetak);
+                    var odigrana = u.Status == StatusUtakmice.Odigrana;
+                    <a asp-page="/Utakmice/Details" asp-route-id="@u.Id" class="list-group-item list-group-item-action utakmica">
+                        <span class="utakmica-vrijeme">
+                            <span class="fw-semibold">@pocetak.ToString("ddd dd.MM.")</span>
+                            <span class="text-muted small">@pocetak.ToString("HH:mm")</span>
+                        </span>
+                        <span class="utakmica-domacin">@u.Domacin?.Naziv</span>
+                        <span class="utakmica-rezultat @(odigrana ? "" : "neodigrana")">@u.Rezultat</span>
+                        <span class="utakmica-gost">@u.Gost?.Naziv</span>
+                        <span class="utakmica-status">
+                            @if (u.Status == StatusUtakmice.Odgodena)
+                            {
+                                <status-badge value="@u.Status" />
+                            }
+                            else if (!odigrana && u.Pocetak < sada)
+                            {
+                                <span class="badge text-bg-light border">čeka rezultat</span>
+                            }
+                        </span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+}

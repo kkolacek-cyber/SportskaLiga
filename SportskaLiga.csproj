@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Javni portal (Razor Pages). Portal je u korijenu repozitorija; ostali projekti su u src/ i ne smiju
+       završiti u njegovom globbingu (inače bi se njihove .cs datoteke prevodile i ovdje). -->
+  <ItemGroup>
+    <Compile Remove="src\**" />
+    <Content Remove="src\**" />
+    <EmbeddedResource Remove="src\**" />
+    <None Remove="src\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="src\SportskaLiga.Data\SportskaLiga.Data.csproj" />
+    <ProjectReference Include="src\SportskaLiga.Domain\SportskaLiga.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

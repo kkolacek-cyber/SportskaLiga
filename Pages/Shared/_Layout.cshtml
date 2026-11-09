@@ -1,0 +1,74 @@
+@{
+    // Putanja trenutne stranice (npr. "/Tablica/Index") – za isticanje aktivne stavke izbornika.
+    var stranica = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    string Aktivno(string mapa) => stranica.StartsWith(mapa) ? "active" : "";
+}
+@* Zajednički okvir svih stranica portala: zaglavlje s izbornikom, poruke, sadržaj stranice i podnožje. *@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Amaterska liga</title>
+    <meta name="description" content="Raspored, rezultati, tablica i strijelci amaterske nogometne lige." />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="zaglavlje">
+        <nav class="navbar navbar-expand-md navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" asp-page="/Index">
+                    <span class="logo-lopta" aria-hidden="true"></span>
+                    <span>Amaterska <strong>liga</strong></span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#izbornik"
+                        aria-controls="izbornik" aria-expanded="false" aria-label="Prikaži izbornik">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="izbornik">
+                    @* Svaka stavka vodi na jednu Razor stranicu (asp-page). *@
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item"><a class="nav-link @Aktivno("/Raspored")" asp-page="/Raspored/Index">Raspored</a></li>
+                        <li class="nav-item"><a class="nav-link @Aktivno("/Rezultati")" asp-page="/Rezultati/Index">Rezultati</a></li>
+                        <li class="nav-item"><a class="nav-link @Aktivno("/Tablica")" asp-page="/Tablica/Index">Tablica</a></li>
+                        <li class="nav-item"><a class="nav-link @Aktivno("/Strijelci")" asp-page="/Strijelci/Index">Strijelci</a></li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link @Aktivno("/Prijava/Status")" asp-page="/Prijava/Status">Status prijave</a></li>
+                        <li class="nav-item ms-md-2"><a class="btn btn-zuti" asp-page="/Prijava/Index">Prijavi momčad</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container py-4">
+        <main role="main" class="pb-4">
+            @* Poruka iz prethodne stranice (TempData preživljava jedno preusmjeravanje). *@
+            @if (TempData["Poruka"] is string poruka)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @poruka
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zatvori"></button>
+                </div>
+            }
+
+            @* Ovdje se umeće sadržaj pojedine stranice. *@
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="podnozje">
+        <div class="container d-flex flex-wrap justify-content-between gap-2">
+            <span>&copy; 2026 Amaterska nogometna liga</span>
+            <span>Raspored i rezultati ažuriraju se čim delegat upiše rezultat.</span>
+        </div>
+    </footer>
+
+    @* Skripte su na kraju stranice; sekcija Scripts omogućuje da pojedine stranice dodaju svoje (npr. validaciju obrasca). *@
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

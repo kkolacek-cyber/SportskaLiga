@@ -29,4 +29,7 @@ public class DashboardViewModel
     public IReadOnlyList<Utakmica> Sljedece { get; init; } = [];
 
     public bool JeDelegat { get; init; }
+
+    /// <summary>Prijave momčadi s portala koje čekaju obradu (vidi samo administrator).</summary>
+    public int PrijaveNaCekanju { get; init; }
 }

@@ -1,0 +1,28 @@
+@page
+@* Tablica lige s legendom i pravilima poretka. *@
+@model SportskaLiga.Pages.Tablica.IndexModel
+@{
+    ViewData["Title"] = "Tablica";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <h1 class="h2 mb-0">Tablica @Model.Sezona?.Naziv</h1>
+    <partial name="_OdabirSezone" model="Model.Sezone" />
+</div>
+
+@if (Model.Sezona is null)
+{
+    <p class="text-muted">Još nema nijedne sezone.</p>
+    return;
+}
+
+<div class="card mb-3">
+    <partial name="_TablicaLige" model="Model.Redovi" />
+</div>
+
+<p class="small text-muted">
+    OU – odigrane utakmice, P – pobjede, N – neriješeno, I – izgubljeno.
+    Pobjeda nosi @Model.Sezona.BodoviZaPobjedu, a neriješeno @Model.Sezona.BodoviZaNerijeseno bod(a).
+    Kod jednakog broja bodova odlučuje gol-razlika, zatim broj postignutih golova.
+    Forma prikazuje zadnjih pet utakmica (najnovija desno).
+</p>

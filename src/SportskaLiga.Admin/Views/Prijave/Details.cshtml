@@ -1,0 +1,89 @@
+@* Detalji prijave i obrada: odobravanje upisuje momčad u sezonu, odbijanje traži razlog. *@
+@model PrijavaObradaViewModel
+@{
+    var p = Model.Prijava;
+    ViewData["Title"] = $"Prijava {p.Kod}";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Prijave momčadi</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@p.Kod</li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h1 class="h3 mb-0">@p.NazivMomcadi</h1>
+                    <status-badge value="@p.Status" class="fs-6" />
+                </div>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Kod prijave</dt>
+                    <dd class="col-sm-8"><code>@p.Kod</code></dd>
+                    <dt class="col-sm-4">Sezona</dt>
+                    <dd class="col-sm-8">@p.Sezona?.Naziv</dd>
+                    <dt class="col-sm-4">Grad</dt>
+                    <dd class="col-sm-8">@p.Grad</dd>
+                    <dt class="col-sm-4">Igralište</dt>
+                    <dd class="col-sm-8">@(p.Igraliste ?? "–")</dd>
+                    <dt class="col-sm-4">Broj igrača</dt>
+                    <dd class="col-sm-8">@p.BrojIgraca</dd>
+                    <dt class="col-sm-4">Kontakt</dt>
+                    <dd class="col-sm-8">@p.KontaktOsoba · @p.KontaktEmail @(p.KontaktTelefon is null ? "" : $"· {p.KontaktTelefon}")</dd>
+                    <dt class="col-sm-4">Podnesena</dt>
+                    <dd class="col-sm-8">@Kalendar.ULokalno(p.DatumPodnosenja).ToString("dd.MM.yyyy. HH:mm")</dd>
+                    @if (!string.IsNullOrEmpty(p.Napomena))
+                    {
+                        <dt class="col-sm-4">Napomena</dt>
+                        <dd class="col-sm-8">@p.Napomena</dd>
+                    }
+                    @if (p.DatumObrade is { } obradeno)
+                    {
+                        <dt class="col-sm-4">Obrađena</dt>
+                        <dd class="col-sm-8">@Kalendar.ULokalno(obradeno).ToString("dd.MM.yyyy. HH:mm")</dd>
+                    }
+                    @if (!string.IsNullOrEmpty(p.OdgovorLige))
+                    {
+                        <dt class="col-sm-4">Odgovor lige</dt>
+                        <dd class="col-sm-8">@p.OdgovorLige</dd>
+                    }
+                    @if (p.Momcad is not null)
+                    {
+                        <dt class="col-sm-4">Momčad</dt>
+                        <dd class="col-sm-8"><a asp-controller="Momcadi" asp-action="Details" asp-route-id="@p.MomcadId">@p.Momcad.Naziv</a></dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    @if (p.Status == StatusPrijave.NaCekanju)
+    {
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header">Obrada</div>
+                <div class="card-body">
+                    <div asp-validation-summary="All" class="alert alert-danger"></div>
+                    <p class="small text-muted">
+                        Odobravanjem se momčad (nova ili postojeća istog naziva) upisuje u sezonu @p.Sezona?.Naziv.
+                        Odgovor vidi podnositelj na stranici statusa prijave; kod odbijanja je obavezan.
+                    </p>
+                    @* Jedan obrazac s dva gumba: formaction određuje akciju (Odobri ili Odbij). *@
+                    <form method="post" asp-action="Odobri" asp-route-id="@p.Id">
+                        <div class="mb-3">
+                            <label asp-for="Odgovor" class="form-label"></label>
+                            <textarea asp-for="Odgovor" name="odgovor" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Odobri</button>
+                            <button type="submit" class="btn btn-outline-danger" asp-action="Odbij" asp-route-id="@p.Id">Odbij</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>

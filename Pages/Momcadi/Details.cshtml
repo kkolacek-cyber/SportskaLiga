@@ -1,0 +1,88 @@
+@page "{id:int}"
+@* Stranica momčadi: podaci, učinak u sezoni, igrači, strijelci i sve utakmice sezone. *@
+@model SportskaLiga.Pages.Momcadi.DetailsModel
+@{
+    var m = Model.Momcad;
+    ViewData["Title"] = m.Naziv;
+    var red = Model.RedUTablici;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@m.Naziv</h1>
+        <p class="text-muted mb-0">
+            @m.Grad
+            @if (m.Igraliste is not null)
+            {
+                <text> · @m.Igraliste</text>
+            }
+            @if (m.GodinaOsnutka is not null)
+            {
+                <text> · osnovan @m.GodinaOsnutka.</text>
+            }
+        </p>
+    </div>
+    <partial name="_OdabirSezone" model="Model.Sezone" />
+</div>
+
+@if (red is not null)
+{
+    @* Učinak u odabranoj sezoni (iz tablice). *@
+    <div class="row row-cols-2 row-cols-md-5 g-3 mb-4 brojke">
+        <div class="col"><div class="brojka"><span>@(red.Pozicija).</span>mjesto</div></div>
+        <div class="col"><div class="brojka"><span>@red.Bodovi</span>bodova</div></div>
+        <div class="col"><div class="brojka"><span>@red.Pobjede-@red.Nerijeseno-@red.Porazi</span>P-N-I</div></div>
+        <div class="col"><div class="brojka"><span>@red.GoloviDani:@red.GoloviPrimljeni</span>golovi</div></div>
+        <div class="col"><div class="brojka"><span><forma niz="@red.Forma" /></span>forma</div></div>
+    </div>
+}
+else if (Model.Sezona is not null)
+{
+    <p class="alert alert-light border">Momčad ne sudjeluje u sezoni @Model.Sezona.Naziv.</p>
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card mb-4">
+            <div class="card-header"><h2 class="h5 mb-0">Igrači</h2></div>
+            @if (m.Igraci.Count == 0)
+            {
+                <p class="text-muted p-3 mb-0">Momčad još nema registriranih igrača.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var i in m.Igraci)
+                    {
+                        <li class="list-group-item d-flex align-items-center gap-3">
+                            <span class="dres">@i.BrojDresa</span>
+                            <span class="flex-fill">@i.PunoIme</span>
+                            <status-badge value="@i.Pozicija" />
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        @if (Model.Strijelci.Count > 0)
+        {
+            <div class="card">
+                <div class="card-header"><h2 class="h5 mb-0">Strijelci u sezoni</h2></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var s in Model.Strijelci)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@s.Igrac</span>
+                            <span class="golovi">@s.Golovi</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-7">
+        <h2 class="h5 mb-3">Utakmice u sezoni @Model.Sezona?.Naziv</h2>
+        <partial name="_Utakmice" model="Model.Utakmice" />
+    </div>
+</div>

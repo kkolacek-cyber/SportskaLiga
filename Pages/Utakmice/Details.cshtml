@@ -1,0 +1,94 @@
+@page "{id:int}"
+@* Detalji jedne utakmice ("zapisnik"): semafor, strijelci po minutama i službene osobe. *@
+@model SportskaLiga.Pages.Utakmice.DetailsModel
+@{
+    var u = Model.Utakmica;
+    ViewData["Title"] = $"{u.Domacin?.Naziv} – {u.Gost?.Naziv}";
+    var pocetak = Kalendar.ULokalno(u.Pocetak);
+    var odigrana = u.Status == StatusUtakmice.Odigrana;
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="@(odigrana ? "/Rezultati/Index" : "/Raspored/Index")" asp-route-sezona="@u.SezonaId">@(odigrana ? "Rezultati" : "Raspored")</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@(u.Kolo). kolo</li>
+    </ol>
+</nav>
+
+<div class="card semafor-kartica mb-4">
+    <div class="card-body">
+        <div class="text-center small mb-3 opacity-75">
+            @u.Sezona?.Naziv · @(u.Kolo). kolo · @pocetak.ToString("dddd, dd.MM.yyyy. 'u' HH:mm") · @(u.Lokacija ?? "igralište nije određeno")
+        </div>
+        <div class="semafor">
+            <a asp-page="/Momcadi/Details" asp-route-id="@u.DomacinId" class="semafor-momcad text-end">@u.Domacin?.Naziv</a>
+            <div class="semafor-rezultat">@u.Rezultat</div>
+            <a asp-page="/Momcadi/Details" asp-route-id="@u.GostId" class="semafor-momcad">@u.Gost?.Naziv</a>
+        </div>
+        <div class="text-center mt-3">
+            @if (u.Status == StatusUtakmice.Odgodena)
+            {
+                <status-badge value="@u.Status" class="fs-6" />
+                @if (!string.IsNullOrEmpty(u.Napomena))
+                {
+                    <div class="small mt-2">@u.Napomena</div>
+                }
+            }
+            else if (!odigrana)
+            {
+                <span class="small opacity-75">@(u.Pocetak > DateTime.UtcNow ? "Utakmica još nije odigrana." : "Rezultat još nije upisan.")</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Strijelci</h2></div>
+            @if (!odigrana)
+            {
+                <p class="text-muted p-3 mb-0">Strijelci će biti prikazani nakon što delegat upiše rezultat.</p>
+            }
+            else if (u.Golovi.Count == 0)
+            {
+                <p class="text-muted p-3 mb-0">Utakmica je završila bez golova.</p>
+            }
+            else
+            {
+                @* Golovi domaćina lijevo, gosta desno – kao na zapisniku. *@
+                <ul class="list-group list-group-flush golovi-popis">
+                    @foreach (var g in u.Golovi.OrderBy(g => g.Minuta))
+                    {
+                        var zaDomacina = g.MomcadId == u.DomacinId;
+                        <li class="list-group-item d-flex align-items-center gap-3 @(zaDomacina ? "" : "flex-row-reverse text-end")">
+                            <span class="minuta">@(g.Minuta)'</span>
+                            <span class="flex-fill">
+                                @g.Igrac?.PunoIme
+                                @if (g.Autogol)
+                                {
+                                    <span class="badge text-bg-secondary ms-1">autogol</span>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">Podaci o utakmici</h2></div>
+            <div class="card-body">
+                <dl class="mb-0">
+                    <dt>Igralište</dt>
+                    <dd>@(u.Lokacija ?? "–")</dd>
+                    <dt>Početak</dt>
+                    <dd>@pocetak.ToString("dd.MM.yyyy. HH:mm")</dd>
+                    <dt>Sudac</dt>
+                    <dd class="mb-0">@(u.Sudac?.PunoIme ?? "još nije određen")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMomcadRepository, MomcadRepository>();
         services.AddScoped<IIgracRepository, IgracRepository>();
         services.AddScoped<IUtakmicaRepository, UtakmicaRepository>();
+        services.AddScoped<IPrijavaRepository, PrijavaRepository>();
 
         return services;
     }

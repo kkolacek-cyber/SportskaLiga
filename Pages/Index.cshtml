@@ -1,0 +1,115 @@
+@page
+@* Početna stranica: sažetak aktivne sezone. *@
+@model IndexModel
+@{
+    ViewData["Title"] = "Početna";
+}
+
+<section class="uvod mb-4">
+    <div>
+        <h1 class="display-6 fw-bold mb-1">Amaterska nogometna liga</h1>
+        <p class="lead mb-0">
+            @if (Model.Sezona is not null)
+            {
+                <text>Sezona @Model.Sezona.Naziv · raspored, rezultati i tablica uvijek ažurni.</text>
+            }
+            else
+            {
+                <text>Sezona još nije počela.</text>
+            }
+        </p>
+    </div>
+    @if (Model.ImaOtvorenihPrijava)
+    {
+        <a asp-page="/Prijava/Index" class="btn btn-zuti btn-lg">Prijavi momčad za novu sezonu</a>
+    }
+</section>
+
+@if (Model.Sezona is not null)
+{
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Tablica</h2>
+                    <a asp-page="/Tablica/Index" class="small">Cijela tablica &rarr;</a>
+                </div>
+                <partial name="_TablicaLige" model="Model.Tablica" view-data='new ViewDataDictionary(ViewData) { ["Skraceno"] = true }' />
+            </div>
+        </div>
+
+        <div class="col-lg-5 d-flex flex-column gap-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Zadnji rezultati</h2>
+                    <a asp-page="/Rezultati/Index" class="small">Svi rezultati &rarr;</a>
+                </div>
+                @if (Model.ZadnjiRezultati.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">Još nema odigranih utakmica.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var u in Model.ZadnjiRezultati)
+                        {
+                            <li class="list-group-item">
+                                <a asp-page="/Utakmice/Details" asp-route-id="@u.Id" class="mini-utakmica">
+                                    <span class="text-end">@u.Domacin?.Naziv</span>
+                                    <span class="utakmica-rezultat">@u.Rezultat</span>
+                                    <span>@u.Gost?.Naziv</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Sljedeće utakmice</h2>
+                    <a asp-page="/Raspored/Index" class="small">Raspored &rarr;</a>
+                </div>
+                @if (Model.Sljedece.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">Nema zakazanih utakmica.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var u in Model.Sljedece)
+                        {
+                            <li class="list-group-item">
+                                <div class="small text-muted">@(u.Kolo). kolo · @Kalendar.ULokalno(u.Pocetak).ToString("dddd, dd.MM. 'u' HH:mm")</div>
+                                <a asp-page="/Utakmice/Details" asp-route-id="@u.Id" class="text-reset text-decoration-none fw-semibold">@u.Domacin?.Naziv &ndash; @u.Gost?.Naziv</a>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Najbolji strijelci</h2>
+                    <a asp-page="/Strijelci/Index" class="small">Svi strijelci &rarr;</a>
+                </div>
+                @if (Model.Strijelci.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">Još nema golova.</p>
+                }
+                else
+                {
+                    <ol class="list-group list-group-flush">
+                        @foreach (var s in Model.Strijelci)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><span class="pozicija me-2">@s.Pozicija</span>@s.Igrac <span class="text-muted small">· @s.Momcad</span></span>
+                                <span class="golovi">@s.Golovi</span>
+                            </li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
+    </div>
+}

@@ -23,6 +23,7 @@ public class SportskaLigaDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Sudac> Suci { get; set; } = default!;
     public DbSet<Utakmica> Utakmice { get; set; } = default!;
     public DbSet<Gol> Golovi { get; set; } = default!;
+    public DbSet<PrijavaMomcadi> PrijaveMomcadi { get; set; } = default!;
 
     // Fluent konfiguracija: indeksi, ograničenja, veze između tablica i ponašanje pri brisanju.
     protected override void OnModelCreating(ModelBuilder builder)
@@ -137,6 +138,25 @@ public class SportskaLigaDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(x => x.MomcadId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<PrijavaMomcadi>(e =>
+        {
+            // Kod se traži pri svakoj provjeri statusa i mora biti jedinstven.
+            e.HasIndex(x => x.Kod).IsUnique();
+            e.HasIndex(x => x.Status);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+
+            e.HasOne(x => x.Sezona)
+                .WithMany()
+                .HasForeignKey(x => x.SezonaId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // SetNull: brisanjem momčadi prijava ostaje (kao povijesni zapis), samo bez veze na momčad.
+            e.HasOne(x => x.Momcad)
+                .WithMany()
+                .HasForeignKey(x => x.MomcadId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

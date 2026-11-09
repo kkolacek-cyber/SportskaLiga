@@ -21,6 +21,14 @@
     <span class="text-muted">@Kalendar.Danas.ToString("dddd, dd.MM.yyyy.")</span>
 </div>
 
+@if (Model.PrijaveNaCekanju > 0)
+{
+    <div class="alert alert-warning d-flex justify-content-between align-items-center">
+        <span>Prijava momčadi s portala koje čekaju obradu: <strong>@Model.PrijaveNaCekanju</strong></span>
+        <a asp-controller="Prijave" asp-action="Index" class="btn btn-sm btn-warning">Obradi</a>
+    </div>
+}
+
 @* Kartice s brojevima; svaka vodi na popis utakmica već filtriran na to stanje. *@
 <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
     <div class="col">

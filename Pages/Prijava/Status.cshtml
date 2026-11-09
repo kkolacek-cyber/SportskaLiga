@@ -1,0 +1,35 @@
+@page
+@* Provjera statusa prijave: kod prijave i e-mail (e-mail potvrđuje da je prijava vaša). *@
+@model SportskaLiga.Pages.Prijava.StatusModel
+@{
+    ViewData["Title"] = "Status prijave";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="h2 mb-3">Status prijave momčadi</h1>
+        <p class="text-muted">Unesite kod koji ste dobili pri slanju prijave i e-mail adresu navedenu u prijavi.</p>
+
+        <form method="post" class="card card-body p-4" novalidate>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Kod" class="form-label"></label>
+                <input asp-for="Input.Kod" class="form-control text-uppercase" autocomplete="off" placeholder="npr. HRAST27K" />
+                <span asp-validation-for="Input.Kod" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Email" class="form-label"></label>
+                <input asp-for="Input.Email" type="email" class="form-control" autocomplete="email" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Provjeri status</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

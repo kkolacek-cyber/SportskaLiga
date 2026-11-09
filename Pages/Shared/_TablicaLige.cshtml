@@ -1,0 +1,61 @@
+@* Tablica lige – zajednički partial (početna i stranica Tablica). Model je izračunata tablica (Logika/IzracunTablice).
+   ViewData["Skraceno"] = true skriva stupce koji na početnoj nisu potrebni. *@
+@model IReadOnlyList<TablicaRed>
+@{
+    var skraceno = ViewData["Skraceno"] is true;
+}
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted p-3 mb-0">U sezoni još nema prijavljenih momčadi.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle mb-0 tablica-lige">
+            <thead>
+                <tr>
+                    <th class="text-end" scope="col">#</th>
+                    <th scope="col">Momčad</th>
+                    <th class="text-center" scope="col" title="Odigrane utakmice">OU</th>
+                    @if (!skraceno)
+                    {
+                        <th class="text-center" scope="col" title="Pobjede">P</th>
+                        <th class="text-center" scope="col" title="Neriješeno">N</th>
+                        <th class="text-center" scope="col" title="Porazi">I</th>
+                        <th class="text-center" scope="col" title="Dani i primljeni golovi">Golovi</th>
+                    }
+                    <th class="text-center" scope="col" title="Gol-razlika">+/-</th>
+                    <th class="text-center" scope="col">Bod.</th>
+                    @if (!skraceno)
+                    {
+                        <th class="d-none d-md-table-cell" scope="col">Forma</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var red in Model)
+                {
+                    <tr>
+                        <td class="text-end"><span class="pozicija">@red.Pozicija</span></td>
+                        <td class="fw-semibold"><a asp-page="/Momcadi/Details" asp-route-id="@red.MomcadId" class="text-reset text-decoration-none">@red.Momcad</a></td>
+                        <td class="text-center">@red.Odigrano</td>
+                        @if (!skraceno)
+                        {
+                            <td class="text-center">@red.Pobjede</td>
+                            <td class="text-center">@red.Nerijeseno</td>
+                            <td class="text-center">@red.Porazi</td>
+                            <td class="text-center text-nowrap">@red.GoloviDani:@red.GoloviPrimljeni</td>
+                        }
+                        <td class="text-center">@(red.GolRazlika > 0 ? "+" : "")@red.GolRazlika</td>
+                        <td class="text-center fw-bold">@red.Bodovi</td>
+                        @if (!skraceno)
+                        {
+                            <td class="d-none d-md-table-cell"><forma niz="@red.Forma" /></td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

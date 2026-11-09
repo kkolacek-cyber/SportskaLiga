@@ -50,6 +50,10 @@ public class StatusBadgeTagHelper : TagHelper
         StatusUtakmice.Odigrana => "success",
         StatusUtakmice.Odgodena => "danger",
 
+        StatusPrijave.NaCekanju => "warning",
+        StatusPrijave.Odobrena => "success",
+        StatusPrijave.Odbijena => "danger",
+
         Pozicija.Vratar => "warning",
         Pozicija.Obrana => "primary",
         Pozicija.Vezni => "success",

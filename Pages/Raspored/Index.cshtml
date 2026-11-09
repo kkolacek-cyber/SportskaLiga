@@ -1,0 +1,57 @@
+@page
+@* Javni raspored sezone s filtrima i straničenjem. *@
+@model SportskaLiga.Pages.Raspored.IndexModel
+@{
+    ViewData["Title"] = "Raspored";
+    var pager = new PagerViewModel
+    {
+        Stranica = Model.Rezultat.Stranica,
+        UkupnoStranica = Model.Rezultat.UkupnoStranica,
+        Page = "/Raspored/Index",
+        Parametri = Model.Parametri
+    };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <h1 class="h2 mb-0">Raspored @Model.Sezona?.Naziv</h1>
+    <partial name="_OdabirSezone" model="Model.Sezone" />
+</div>
+
+@if (Model.Sezona is null)
+{
+    <p class="text-muted">Još nema nijedne sezone.</p>
+    return;
+}
+
+@* Filtri su GET obrazac: odabir se vidi u adresi, pa se filtrirani raspored može poslati poveznicom. *@
+<form method="get" class="card card-body filteri mb-4">
+    <input type="hidden" name="sezona" value="@Model.Sezona.Id" />
+    <div class="row g-3 align-items-end">
+        <div class="col-sm-6 col-lg-3">
+            <label asp-for="Kolo" class="form-label">Kolo</label>
+            <select asp-for="Kolo" asp-items="Model.Kola" class="form-select">
+                <option value="">Sva kola</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <label asp-for="Momcad" class="form-label">Momčad</label>
+            <select asp-for="Momcad" asp-items="Model.Momcadi" class="form-select">
+                <option value="">Sve momčadi</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="form-check">
+                <input asp-for="Sve" class="form-check-input" />
+                <label asp-for="Sve" class="form-check-label">Prikaži i odigrane</label>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <button type="submit" class="btn btn-primary w-100">Prikaži</button>
+        </div>
+    </div>
+</form>
+
+<p class="text-muted small">Utakmica: @Model.Rezultat.UkupnoStavki · Vremena su po hrvatskom vremenu.</p>
+
+<partial name="_Utakmice" model="Model.Rezultat.Items" />
+<partial name="_Pager" model="pager" />

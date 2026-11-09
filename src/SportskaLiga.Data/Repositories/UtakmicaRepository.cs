@@ -48,6 +48,11 @@ public class UtakmicaRepository : Repository<Utakmica>, IUtakmicaRepository
             query = query.Where(u => u.DelegatId == filter.DelegatId);
         }
 
+        if (filter.SamoNeodigrane)
+        {
+            query = query.Where(u => u.Status != StatusUtakmice.Odigrana);
+        }
+
         if (filter.SamoCekajuRezultat)
         {
             var sada = DateTime.UtcNow;

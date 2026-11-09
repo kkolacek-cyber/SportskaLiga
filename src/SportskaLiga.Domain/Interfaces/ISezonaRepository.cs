@@ -11,6 +11,9 @@ public interface ISezonaRepository : IRepository<Sezona>
     /// <summary>Sve sezone, najnovija prva (za padajuće izbornike).</summary>
     Task<IReadOnlyList<Sezona>> GetSveAsync(CancellationToken ct = default);
 
+    /// <summary>Sezone u koje se momčadi još mogu prijaviti: nisu završile i raspored im još nije generiran.</summary>
+    Task<IReadOnlyList<Sezona>> GetOtvoreneZaPrijaveAsync(CancellationToken ct = default);
+
     /// <summary>Sezona s prijavljenim momčadima (samo za čitanje).</summary>
     Task<Sezona?> GetDetailsAsync(int id, CancellationToken ct = default);
 

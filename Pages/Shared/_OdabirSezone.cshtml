@@ -1,0 +1,9 @@
+@* Padajući izbornik sezone za stranice koje nasljeđuju SezonaPageModel. Promjena odmah šalje GET obrazac
+   (bez JavaScripta treba kliknuti "Prikaži"). Ostali filtri stranice ovdje se ne čuvaju – nova sezona ima druga kola. *@
+@model IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+
+<form method="get" class="d-flex align-items-center gap-2">
+    <label for="sezona" class="form-label mb-0 text-nowrap">Sezona</label>
+    <select id="sezona" name="sezona" asp-items="Model" class="form-select form-select-sm" onchange="this.form.submit()"></select>
+    <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Prikaži</button></noscript>
+</form>

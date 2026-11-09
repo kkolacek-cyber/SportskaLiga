@@ -49,6 +49,64 @@ public static class DbSeeder
         {
             await SeedLigaAsync(context, [delegat.Id, delegat2.Id], ct);
         }
+
+        // Zaseban korak (i zaseban uvjet) da se doda i u bazu koja je ligu dobila prije nego što su postojale prijave.
+        if (!await context.PrijaveMomcadi.AnyAsync(ct))
+        {
+            await SeedPrijaveAsync(context, ct);
+        }
+    }
+
+    /// <summary>
+    /// Sljedeća sezona (bez rasporeda, pa su prijave otvorene) i dvije demo prijave s poznatim kodovima
+    /// za isprobavanje provjere statusa: HRAST27K (na čekanju) i MACKE27X (odbijena).
+    /// </summary>
+    private static async Task SeedPrijaveAsync(SportskaLigaDbContext context, CancellationToken ct)
+    {
+        var sljedeca = await context.Sezone.FirstOrDefaultAsync(s => s.Naziv == "2027./2028.", ct);
+        if (sljedeca is null)
+        {
+            sljedeca = new Sezona
+            {
+                Naziv = "2027./2028.",
+                DatumPocetka = new DateOnly(2027, 8, 1),
+                DatumZavrsetka = new DateOnly(2028, 6, 30)
+            };
+            context.Sezone.Add(sljedeca);
+        }
+
+        context.PrijaveMomcadi.AddRange(
+            new PrijavaMomcadi
+            {
+                Kod = "HRAST27K",
+                Sezona = sljedeca,
+                NazivMomcadi = "NK Hrastovi Sirač",
+                Grad = "Sirač",
+                Igraliste = "Igralište pod hrastovima",
+                KontaktOsoba = "Tomislav Hrast",
+                KontaktEmail = "hrastovi@primjer.liga.local",
+                KontaktTelefon = "091 555 1234",
+                BrojIgraca = 16,
+                Napomena = "Novi klub, prvi put se prijavljujemo u ligu.",
+                Status = StatusPrijave.NaCekanju,
+                DatumPodnosenja = DateTime.UtcNow.AddDays(-2)
+            },
+            new PrijavaMomcadi
+            {
+                Kod = "MACKE27X",
+                Sezona = sljedeca,
+                NazivMomcadi = "NK Mačke Daruvar",
+                Grad = "Daruvar",
+                KontaktOsoba = "Ivana Mačković",
+                KontaktEmail = "macke@primjer.liga.local",
+                BrojIgraca = 8,
+                Status = StatusPrijave.Odbijena,
+                DatumPodnosenja = DateTime.UtcNow.AddDays(-6),
+                DatumObrade = DateTime.UtcNow.AddDays(-5),
+                OdgovorLige = "Momčad mora imati barem 11 registriranih igrača. Pozivamo vas da se prijavite ponovno."
+            });
+
+        await context.SaveChangesAsync(ct);
     }
 
     /// <summary>Prazna vrijednost (npr. <c>SEED_ADMIN_PASSWORD=</c> u .env) tretira se kao da nije zadana.</summary>

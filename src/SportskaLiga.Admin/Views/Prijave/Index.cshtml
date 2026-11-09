@@ -1,0 +1,73 @@
+@* Prijave momčadi s portala; zadano samo one koje čekaju obradu. *@
+@model PrijaveIndexViewModel
+@{
+    ViewData["Title"] = "Prijave momčadi";
+    var rezultat = Model.Rezultat;
+    var pager = new PagerViewModel
+    {
+        Stranica = rezultat.Stranica,
+        UkupnoStranica = rezultat.UkupnoStranica,
+        Kontroler = "Prijave",
+        Parametri = Model.Status is null
+            ? new Dictionary<string, string?> { ["svi"] = "true" }
+            : new Dictionary<string, string?> { ["status"] = Model.Status.ToString() }
+    };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h2 mb-0">Prijave momčadi</h1>
+    @* Brzi filteri statusa. *@
+    <div class="btn-group" role="group" aria-label="Filter statusa">
+        @foreach (var s in Enum.GetValues<StatusPrijave>())
+        {
+            <a asp-action="Index" asp-route-status="@s" class="btn btn-outline-secondary @(Model.Status == s ? "active" : "")">@s.NazivZaPrikaz()</a>
+        }
+        <a asp-action="Index" asp-route-svi="true" class="btn btn-outline-secondary @(Model.Status is null ? "active" : "")">Sve</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Ukupno: <strong>@rezultat.UkupnoStavki</strong></div>
+    @if (rezultat.Items.Count == 0)
+    {
+        <div class="card-body text-muted">Nema prijava.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Kod</th>
+                        <th>Momčad</th>
+                        <th>Sezona</th>
+                        <th>Kontakt</th>
+                        <th>Podnesena</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in rezultat.Items)
+                    {
+                        <tr>
+                            <td><code>@p.Kod</code></td>
+                            <td class="fw-semibold">@p.NazivMomcadi <span class="text-muted small">(@p.Grad)</span></td>
+                            <td>@p.Sezona?.Naziv</td>
+                            <td class="small">@p.KontaktOsoba<br /><span class="text-muted">@p.KontaktEmail</span></td>
+                            <td class="text-nowrap">@Kalendar.ULokalno(p.DatumPodnosenja).ToString("dd.MM.yyyy. HH:mm")</td>
+                            <td><status-badge value="@p.Status" /></td>
+                            <td class="text-end"><a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm @(p.Status == StatusPrijave.NaCekanju ? "btn-primary" : "btn-outline-secondary")">@(p.Status == StatusPrijave.NaCekanju ? "Obradi" : "Detalji")</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (rezultat.UkupnoStranica > 1)
+    {
+        <div class="card-footer">
+            <partial name="_Pager" model="pager" />
+        </div>
+    }
+</div>

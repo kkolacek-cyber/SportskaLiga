@@ -334,6 +334,89 @@ namespace SportskaLiga.Data.Migrations
                     b.ToTable("Momcadi");
                 });
 
+            modelBuilder.Entity("SportskaLiga.Domain.Models.PrijavaMomcadi", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BrojIgraca")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DatumObrade")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DatumPodnosenja")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Grad")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Igraliste")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Kod")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<string>("KontaktEmail")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("KontaktOsoba")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("KontaktTelefon")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("MomcadId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Napomena")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("NazivMomcadi")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("OdgovorLige")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("SezonaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Kod")
+                        .IsUnique();
+
+                    b.HasIndex("MomcadId");
+
+                    b.HasIndex("SezonaId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("PrijaveMomcadi");
+                });
+
             modelBuilder.Entity("SportskaLiga.Domain.Models.Sezona", b =>
                 {
                     b.Property<int>("Id")
@@ -577,6 +660,24 @@ namespace SportskaLiga.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Momcad");
+                });
+
+            modelBuilder.Entity("SportskaLiga.Domain.Models.PrijavaMomcadi", b =>
+                {
+                    b.HasOne("SportskaLiga.Domain.Models.Momcad", "Momcad")
+                        .WithMany()
+                        .HasForeignKey("MomcadId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SportskaLiga.Domain.Models.Sezona", "Sezona")
+                        .WithMany()
+                        .HasForeignKey("SezonaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Momcad");
+
+                    b.Navigation("Sezona");
                 });
 
             modelBuilder.Entity("SportskaLiga.Domain.Models.SezonaMomcad", b =>

@@ -16,11 +16,13 @@ public class HomeController : Controller
 {
     private readonly ISezonaRepository _sezone;
     private readonly IUtakmicaRepository _utakmice;
+    private readonly IPrijavaRepository _prijave;
 
-    public HomeController(ISezonaRepository sezone, IUtakmicaRepository utakmice)
+    public HomeController(ISezonaRepository sezone, IUtakmicaRepository utakmice, IPrijavaRepository prijave)
     {
         _sezone = sezone;
         _utakmice = utakmice;
+        _prijave = prijave;
     }
 
     /// <summary>Brojevi, tablica, strijelci i utakmice koje traže pažnju; grafove dohvaća dashboard.js iz <see cref="Statistika"/>.</summary>
@@ -68,7 +70,8 @@ public class HomeController : Controller
             ZaUnos = zaUnos.Items,
             // Iz zakazanih izbacujemo one kojima je termin prošao (one su već u "čekaju rezultat").
             Sljedece = sljedece.Items.Where(u => u.Pocetak >= DateTime.UtcNow).Take(5).ToList(),
-            JeDelegat = jeDelegat
+            JeDelegat = jeDelegat,
+            PrijaveNaCekanju = jeDelegat ? 0 : await _prijave.BrojNaCekanjuAsync(ct)
         });
     }
 

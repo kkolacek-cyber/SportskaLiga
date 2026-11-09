@@ -1,0 +1,100 @@
+@page
+@* Obrazac prijave momčadi u ligu s validacijom na klijentu (jQuery Validation) i poslužitelju. *@
+@model SportskaLiga.Pages.Prijava.IndexModel
+@{
+    ViewData["Title"] = "Prijava momčadi";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <h1 class="h2 mb-2">Prijava momčadi u ligu</h1>
+        <p class="text-muted mb-4">
+            Prijavu pregledava vodstvo lige. Nakon slanja dobit ćete kod kojim možete pratiti status prijave.
+            Kad prijava bude odobrena, momčad se upisuje u sezonu i dobiva mjesto u rasporedu.
+        </p>
+
+        @if (!Model.PrijaveOtvorene)
+        {
+            <div class="alert alert-info">
+                Prijave trenutno nisu otvorene – raspored tekuće sezone je već objavljen. Pratite stranicu za sljedeću sezonu.
+            </div>
+            return;
+        }
+
+        <form method="post" class="card card-body p-4" novalidate>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <fieldset class="mb-4">
+                <legend class="h5">Momčad</legend>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.SezonaId" class="form-label"></label>
+                        <select asp-for="Input.SezonaId" asp-items="Model.Sezone" class="form-select"></select>
+                        <span asp-validation-for="Input.SezonaId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.NazivMomcadi" class="form-label"></label>
+                        <input asp-for="Input.NazivMomcadi" class="form-control" placeholder="npr. NK Hrastovi Sirač" />
+                        <span asp-validation-for="Input.NazivMomcadi" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Grad" class="form-label"></label>
+                        <input asp-for="Input.Grad" class="form-control" />
+                        <span asp-validation-for="Input.Grad" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Input.Igraliste" class="form-label"></label>
+                        <input asp-for="Input.Igraliste" class="form-control" />
+                        <span asp-validation-for="Input.Igraliste" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.BrojIgraca" class="form-label"></label>
+                        <input asp-for="Input.BrojIgraca" class="form-control" min="7" max="40" />
+                        <span asp-validation-for="Input.BrojIgraca" class="text-danger"></span>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="mb-4">
+                <legend class="h5">Kontakt</legend>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label asp-for="Input.KontaktOsoba" class="form-label"></label>
+                        <input asp-for="Input.KontaktOsoba" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="Input.KontaktOsoba" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.KontaktEmail" class="form-label"></label>
+                        <input asp-for="Input.KontaktEmail" class="form-control" autocomplete="email" />
+                        <div class="form-text">Isti e-mail treba za provjeru statusa prijave.</div>
+                        <span asp-validation-for="Input.KontaktEmail" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.KontaktTelefon" class="form-label"></label>
+                        <input asp-for="Input.KontaktTelefon" class="form-control" autocomplete="tel" />
+                        <span asp-validation-for="Input.KontaktTelefon" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Napomena" class="form-label"></label>
+                        <textarea asp-for="Input.Napomena" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Input.Napomena" class="text-danger"></span>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="form-check mb-4">
+                <input asp-for="Input.PrihvacamPravila" class="form-check-input" />
+                <label asp-for="Input.PrihvacamPravila" class="form-check-label"></label>
+                <span asp-validation-for="Input.PrihvacamPravila" class="text-danger d-block"></span>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary btn-lg">Pošalji prijavu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

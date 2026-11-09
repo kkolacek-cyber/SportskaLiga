@@ -25,6 +25,16 @@ public class SezonaRepository : Repository<Sezona>, ISezonaRepository
             .OrderByDescending(s => s.DatumPocetka)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Sezona>> GetOtvoreneZaPrijaveAsync(CancellationToken ct = default)
+    {
+        var danas = Kalendar.Danas;
+
+        return await Context.Sezone.AsNoTracking()
+            .Where(s => s.DatumZavrsetka >= danas && !s.Utakmice.Any())
+            .OrderBy(s => s.DatumPocetka)
+            .ToListAsync(ct);
+    }
+
     public async Task<Sezona?> GetDetailsAsync(int id, CancellationToken ct = default)
         => await Context.Sezone.AsNoTracking()
             .Include(s => s.Prijave).ThenInclude(p => p.Momcad)

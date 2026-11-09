@@ -17,6 +17,9 @@ public class UtakmicaFilter
     /// <summary>Samo utakmice dodijeljene ovom delegatu (Identity Id).</summary>
     public string? DelegatId { get; set; }
 
+    /// <summary>Samo utakmice bez rezultata (zakazane i odgođene) – javni raspored.</summary>
+    public bool SamoNeodigrane { get; set; }
+
     /// <summary>Samo utakmice kojima je termin prošao, a rezultat još nije upisan (posao za delegata).</summary>
     public bool SamoCekajuRezultat { get; set; }
 

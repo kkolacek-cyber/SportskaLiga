@@ -92,6 +92,11 @@ body {
   border: 2px solid #1c1917;
 }
 
+/* Prazan sažetak validacije (nema grešaka) se ne prikazuje – inače bi crveni okvir bio vidljiv i bez poruka. */
+.validation-summary-valid {
+  display: none;
+}
+
 .card {
   border: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
