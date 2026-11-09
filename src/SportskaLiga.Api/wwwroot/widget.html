@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Primjer: stranica kluba s widgetom lige</title>
+    <style>
+        body { font-family: Georgia, serif; background: #fafaf9; margin: 0; }
+        header { background: #7f1d1d; color: #fff; padding: 1rem 2rem; }
+        main { padding: 1.5rem 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+        code { background: #e7e5e4; padding: .1rem .3rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>NK Primjer – službena stranica</h1>
+        <p>Ovo je izmišljena stranica kluba koja prikazuje podatke lige pomoću widgeta (JavaScript + Web API).</p>
+    </header>
+
+    <main>
+        <section>
+            <div data-liga-widget="tablica"></div>
+        </section>
+        <section>
+            <div data-liga-widget="rezultati" data-broj="5"></div>
+            <br />
+            <div data-liga-widget="raspored" data-broj="5"></div>
+        </section>
+        <section>
+            <h2>Kako ugraditi</h2>
+            <p>Klub na svoju stranicu doda element i skriptu:</p>
+            <pre><code>&lt;div data-liga-widget="tablica"&gt;&lt;/div&gt;
+&lt;div data-liga-widget="rezultati" data-momcad="3"&gt;&lt;/div&gt;
+&lt;script src="http://localhost:8083/liga-widget.js"&gt;&lt;/script&gt;</code></pre>
+            <p>Atributi: <code>data-sezona</code> (Id sezone, zadano aktivna), <code>data-momcad</code> (samo utakmice momčadi),
+                <code>data-broj</code> (broj utakmica).</p>
+        </section>
+    </main>
+
+    <script src="liga-widget.js"></script>
+</body>
+</html>

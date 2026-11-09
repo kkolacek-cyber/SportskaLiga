@@ -2,6 +2,7 @@
   <Project Path="SportskaLiga.csproj" />
   <Folder Name="/src/">
     <Project Path="src/SportskaLiga.Admin/SportskaLiga.Admin.csproj" />
+    <Project Path="src/SportskaLiga.Api/SportskaLiga.Api.csproj" />
     <Project Path="src/SportskaLiga.Data/SportskaLiga.Data.csproj" />
     <Project Path="src/SportskaLiga.Domain/SportskaLiga.Domain.csproj" />
   </Folder>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- XML komentari kontrolera i DTO-ova ulaze u OpenAPI dokument (opisi u Swagger UI-ju). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SportskaLiga.Data\SportskaLiga.Data.csproj" />
+    <ProjectReference Include="..\SportskaLiga.Domain\SportskaLiga.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,2020 @@
+{
+	"info": {
+		"_postman_id": "7da15c42-6d2d-46ac-a133-337c2440829d",
+		"name": "SportskaLiga API",
+		"description": "Postman testovi za **SportskaLiga Web API** (Auth, Liga, Utakmice, Momčadi).\n\n**Pokretanje**\n1. Uvezi ovu kolekciju i okolinu (`SportskaLiga.lokalno` za `dotnet run`, `SportskaLiga.docker` za Docker).\n2. Baza i Admin moraju biti pokrenuti barem jednom (migracije + seed), zatim API.\n3. Pokreni cijelu kolekciju redom (Run collection) – zahtjevi spremaju tokene i Id-eve u varijable za sljedeće.\n\nTestovi za sobom čiste: upisani rezultat se poništava, a dodana momčad briše.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Jedinstven naziv testne momčadi, da ponovljeno pokretanje ne udari u 409.",
+					"if (!pm.collectionVariables.get('nazivTest')) {",
+					"    pm.collectionVariables.set('nazivTest', 'NK Postman ' + Date.now().toString().slice(-6));",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.test('Poslužitelj nije vratio pogrešku 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+					"pm.test('Odgovor stiže u manje od 3 s', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+					"// Nakon zadnjeg zahtjeva naziv se briše, pa sljedeće pokretanje dobiva novi.",
+					"if (pm.info.requestName.startsWith('DELETE /api/momcadi/{id} – već obrisana')) pm.collectionVariables.unset('nazivTest');"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "POST /api/auth/login – administrator (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"pm.test('Odgovor je JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+									"",
+									"const o = pm.response.json();",
+									"pm.test('Odgovor sadrži JWT i uloge', () => {",
+									"    pm.expect(o.token).to.match(/^[\\w-]+\\.[\\w-]+\\.[\\w-]+$/);",
+									"    pm.expect(o.tipTokena).to.eql('Bearer');",
+									"    pm.expect(new Date(o.istjeceUtc).getTime()).to.be.above(Date.now());",
+									"    pm.expect(o.uloge).to.include('Administrator');",
+									"});",
+									"pm.environment.set('adminToken', o.token);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"email\": \"{{adminEmail}}\", \"lozinka\": \"{{adminPassword}}\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/login – delegat (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const o = pm.response.json();",
+									"pm.test('Delegat ima ulogu Delegat, ali ne Administrator', () => {",
+									"    pm.expect(o.email).to.eql(pm.environment.get('delegatEmail'));",
+									"    pm.expect(o.uloge).to.include('Delegat').and.not.include('Administrator');",
+									"});",
+									"pm.environment.set('delegatToken', o.token);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"email\": \"{{delegatEmail}}\", \"lozinka\": \"{{delegatPassword}}\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/login – pogrešna lozinka (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 401 Unauthorized', () => pm.response.to.have.status(401));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+									"",
+									"pm.test('Poruka ne otkriva postoji li račun', () => pm.expect(pm.response.json().detail).to.eql('Neispravan e-mail ili lozinka.'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"email\": \"{{delegatEmail}}\", \"lozinka\": \"kriva-lozinka\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/auth/login – neispravan unos (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 400 Bad Request', () => pm.response.to.have.status(400));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+									"pm.test('Greška je uz polje email', () => pm.expect(Object.keys(pm.response.json().errors).join(',').toLowerCase()).to.include('email'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"email\": \"nije-email\", \"lozinka\": \"\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/utakmice/cekaju-rezultat – nevaljan token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 401 Unauthorized', () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/cekaju-rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"cekaju-rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{nevaljaniToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Liga (javno)",
+			"item": [
+				{
+					"name": "GET /api/sezone (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"pm.test('Odgovor je JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+									"",
+									"const sezone = pm.response.json();",
+									"pm.test('Postoji točno jedna aktivna sezona', () => pm.expect(sezone.filter(s => s.aktivna)).to.have.lengthOf(1));",
+									"pm.collectionVariables.set('sezonaId', sezone.find(s => s.aktivna).id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/sezone",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sezone"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/tablica – aktivna sezona (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const t = pm.response.json();",
+									"pm.test('Tablica je za aktivnu sezonu', () => pm.expect(t.sezona.id).to.eql(Number(pm.collectionVariables.get('sezonaId'))));",
+									"pm.test('Redovi su poredani po bodovima', () => {",
+									"    pm.expect(t.redovi.length).to.be.above(1);",
+									"    for (let i = 1; i < t.redovi.length; i++) {",
+									"        pm.expect(t.redovi[i - 1].bodovi).to.be.at.least(t.redovi[i].bodovi);",
+									"    }",
+									"});",
+									"pm.test('Bodovi = 3 x pobjede + neriješeno', () => t.redovi.forEach(r =>",
+									"    pm.expect(r.bodovi).to.eql(r.pobjede * t.sezona.bodoviZaPobjedu + r.nerijeseno * t.sezona.bodoviZaNerijeseno)));",
+									"pm.test('Forma ima najviše 5 znakova P/N/I', () => t.redovi.forEach(r => pm.expect(r.forma).to.match(/^[PNI]{0,5}$/)));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tablica",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tablica"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/tablica?sezonaId – nepostojeća sezona (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 404 Not Found', () => pm.response.to.have.status(404));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tablica?sezonaId=999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tablica"
+							],
+							"query": [
+								{
+									"key": "sezonaId",
+									"value": "999999"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/strijelci?najvise=5 (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const s = pm.response.json().strijelci;",
+									"pm.test('Najviše 5 strijelaca, od najboljeg', () => {",
+									"    pm.expect(s.length).to.be.within(1, 5);",
+									"    for (let i = 1; i < s.length; i++) pm.expect(s[i - 1].golovi).to.be.at.least(s[i].golovi);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/strijelci?najvise=5",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"strijelci"
+							],
+							"query": [
+								{
+									"key": "najvise",
+									"value": "5"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/strijelci?najvise=0 – izvan raspona (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 400 Bad Request', () => pm.response.to.have.status(400));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+									"pm.test('Greška je uz polje najvise', () => pm.expect(Object.keys(pm.response.json().errors).join(',').toLowerCase()).to.include('najvise'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/strijelci?najvise=0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"strijelci"
+							],
+							"query": [
+								{
+									"key": "najvise",
+									"value": "0"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/raspored (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const r = pm.response.json();",
+									"pm.test('Raspored sadrži samo utakmice bez rezultata', () => r.stavke.forEach(u => pm.expect(u.status).to.not.eql('Odigrana')));",
+									"pm.test('Raspored je kronološki', () => {",
+									"    for (let i = 1; i < r.stavke.length; i++) pm.expect(new Date(r.stavke[i - 1].pocetak) <= new Date(r.stavke[i].pocetak)).to.be.true;",
+									"});",
+									"pm.test('Straničenje je ispravno', () => pm.expect(r.velicinaStranice).to.eql(100));",
+									"const buduca = r.stavke.find(u => u.status === 'Zakazana' && new Date(u.pocetak) > new Date());",
+									"pm.test('Postoji buduća utakmica', () => pm.expect(buduca).to.exist);",
+									"pm.collectionVariables.set('buducaUtakmicaId', buduca.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/raspored?velicinaStranice=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"raspored"
+							],
+							"query": [
+								{
+									"key": "velicinaStranice",
+									"value": "100"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/rezultati (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const r = pm.response.json();",
+									"pm.test('Samo odigrane utakmice s rezultatom', () => r.stavke.forEach(u => {",
+									"    pm.expect(u.status).to.eql('Odigrana');",
+									"    pm.expect(u.goloviDomacin).to.be.a('number');",
+									"}));",
+									"pm.test('Najnovije prve', () => {",
+									"    for (let i = 1; i < r.stavke.length; i++) pm.expect(new Date(r.stavke[i - 1].pocetak) >= new Date(r.stavke[i].pocetak)).to.be.true;",
+									"});",
+									"pm.collectionVariables.set('odigranaUtakmicaId', r.stavke[0].id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rezultati",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rezultati"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/rezultati?kolo=1 – filtar kola (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('Sve utakmice su iz 1. kola', () => pm.response.json().stavke.forEach(u => pm.expect(u.kolo).to.eql(1)));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rezultati?kolo=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rezultati"
+							],
+							"query": [
+								{
+									"key": "kolo",
+									"value": "1"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/rezultati?velicinaStranice=1000 – izvan raspona (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 400 Bad Request', () => pm.response.to.have.status(400));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+									"pm.test('Greška je uz polje velicinaStranice', () => pm.expect(Object.keys(pm.response.json().errors).join(',').toLowerCase()).to.include('velicinastranice'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rezultati?velicinaStranice=1000",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rezultati"
+							],
+							"query": [
+								{
+									"key": "velicinaStranice",
+									"value": "1000"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Utakmice",
+			"item": [
+				{
+					"name": "GET /api/utakmice/{id} – odigrana utakmica (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const u = pm.response.json();",
+									"pm.test('Broj strijelaca jednak je zbroju golova', () => pm.expect(u.golovi.length).to.eql(u.goloviDomacin + u.goloviGost));",
+									"pm.test('Početak ima pomak hrvatskog vremena', () => pm.expect(u.pocetak).to.match(/\\+0[12]:00$/));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{odigranaUtakmicaId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{odigranaUtakmicaId}}"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/utakmice/{id} – nepostojeća (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 404 Not Found', () => pm.response.to.have.status(404));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"999999"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/utakmice/cekaju-rezultat – bez tokena (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 401 Unauthorized', () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/cekaju-rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"cekaju-rezultat"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/utakmice/cekaju-rezultat – delegat (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const r = pm.response.json();",
+									"pm.test('Delegat ima barem jednu utakmicu koja čeka rezultat', () => pm.expect(r.stavke.length).to.be.above(0));",
+									"pm.test('Sve su zakazane i već počele', () => r.stavke.forEach(u => {",
+									"    pm.expect(u.status).to.eql('Zakazana');",
+									"    pm.expect(new Date(u.pocetak) < new Date()).to.be.true;",
+									"}));",
+									"pm.collectionVariables.set('cekaUtakmicaId', r.stavke[0].id);",
+									"pm.collectionVariables.set('domacinId', r.stavke[0].domacin.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/cekaju-rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"cekaju-rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{delegatToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/momcadi/{id} – igrači domaćina (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const m = pm.response.json();",
+									"pm.test('Momčad ima igrače', () => pm.expect(m.igraci.length).to.be.above(0));",
+									"pm.collectionVariables.set('strijelacId', m.igraci[0].id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi/{{domacinId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi",
+								"{{domacinId}}"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "PUT /api/utakmice/{id}/rezultat – bez tokena (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 401 Unauthorized', () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"goloviDomacin\": 1, \"goloviGost\": 0, \"golovi\": [] }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PUT /api/utakmice/{id}/rezultat – broj strijelaca se ne slaže (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 400 Bad Request', () => pm.response.to.have.status(400));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+									"pm.test('Greška je uz polje golovi', () => pm.expect(Object.keys(pm.response.json().errors).join(',').toLowerCase()).to.include('golovi'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{delegatToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"goloviDomacin\": 2, \"goloviGost\": 0, \"golovi\": [ { \"igracId\": {{strijelacId}}, \"minuta\": 10, \"autogol\": false } ] }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PUT /api/utakmice/{id}/rezultat – minuta izvan raspona (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 400 Bad Request', () => pm.response.to.have.status(400));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+									"pm.test('Greška je uz polje minuta', () => pm.expect(Object.keys(pm.response.json().errors).join(',').toLowerCase()).to.include('minuta'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{delegatToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"goloviDomacin\": 1, \"goloviGost\": 0, \"golovi\": [ { \"igracId\": {{strijelacId}}, \"minuta\": 130, \"autogol\": false } ] }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PUT /api/utakmice/{id}/rezultat – utakmica još nije počela (409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 409 Conflict', () => pm.response.to.have.status(409));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{buducaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{buducaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"goloviDomacin\": 0, \"goloviGost\": 0, \"golovi\": [] }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PUT /api/utakmice/{id}/rezultat – nepostojeća (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 404 Not Found', () => pm.response.to.have.status(404));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/999999/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"999999",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"goloviDomacin\": 0, \"goloviGost\": 0, \"golovi\": [] }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PUT /api/utakmice/{id}/rezultat – delegat upisuje 1:0 (204)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 204 No Content', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{delegatToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"goloviDomacin\": 1, \"goloviGost\": 0, \"golovi\": [ { \"igracId\": {{strijelacId}}, \"minuta\": 57, \"autogol\": false } ] }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/utakmice/{id} – provjera upisa (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const u = pm.response.json();",
+									"pm.test('Utakmica je odigrana 1:0 sa strijelcem u 57. minuti', () => {",
+									"    pm.expect(u.status).to.eql('Odigrana');",
+									"    pm.expect(u.rezultat).to.eql('1 : 0');",
+									"    pm.expect(u.golovi).to.have.lengthOf(1);",
+									"    pm.expect(u.golovi[0].igracId).to.eql(Number(pm.collectionVariables.get('strijelacId')));",
+									"    pm.expect(u.golovi[0].minuta).to.eql(57);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/utakmice/{id}/rezultat – delegat nema pravo (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 403 Forbidden', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{delegatToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/utakmice/{id}/rezultat – administrator poništava (204)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 204 No Content', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/utakmice/{id}/rezultat – već poništen (409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 409 Conflict', () => pm.response.to.have.status(409));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}/rezultat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}",
+								"rezultat"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET /api/utakmice/{id} – nakon poništavanja (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const u = pm.response.json();",
+									"pm.test('Utakmica je ponovno zakazana, bez golova', () => {",
+									"    pm.expect(u.status).to.eql('Zakazana');",
+									"    pm.expect(u.goloviDomacin).to.be.null;",
+									"    pm.expect(u.golovi).to.be.empty;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/utakmice/{{cekaUtakmicaId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"utakmice",
+								"{{cekaUtakmicaId}}"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Momcadi",
+			"item": [
+				{
+					"name": "GET /api/momcadi (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const r = pm.response.json();",
+									"pm.test('Popis ima momčadi i podatke o straničenju', () => {",
+									"    pm.expect(r.stavke.length).to.be.above(0);",
+									"    pm.expect(r.ukupnoStavki).to.be.at.least(r.stavke.length);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "GET /api/momcadi?tekst – pretraga (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"pm.test('Sve pronađene momčadi sadrže traženi tekst', () => pm.response.json().stavke.forEach(m =>",
+									"    pm.expect((m.naziv + ' ' + m.grad).toLowerCase()).to.include('nk')));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi?tekst=nk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi"
+							],
+							"query": [
+								{
+									"key": "tekst",
+									"value": "nk"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "POST /api/momcadi – bez tokena (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 401 Unauthorized', () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"naziv\": \"{{nazivTest}}\", \"grad\": \"Varaždin\", \"igraliste\": \"Igralište uz Dravu\", \"godinaOsnutka\": 1998, \"kontaktEmail\": \"tajnik@primjer.liga.local\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/momcadi – delegat nema pravo (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 403 Forbidden', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{delegatToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"naziv\": \"{{nazivTest}}\", \"grad\": \"Varaždin\", \"igraliste\": \"Igralište uz Dravu\", \"godinaOsnutka\": 1998, \"kontaktEmail\": \"tajnik@primjer.liga.local\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/momcadi – neispravan unos (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 400 Bad Request', () => pm.response.to.have.status(400));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+									"pm.test('Greška je uz polje naziv', () => pm.expect(Object.keys(pm.response.json().errors).join(',').toLowerCase()).to.include('naziv'));",
+									"",
+									"pm.test('Greške za naziv, godinu i e-mail', () => {",
+									"    const polja = Object.keys(pm.response.json().errors).join(',').toLowerCase();",
+									"    ['naziv', 'godinaosnutka', 'kontaktemail'].forEach(p => pm.expect(polja).to.include(p));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"naziv\": \"\", \"grad\": \"Zagreb\", \"godinaOsnutka\": 1500, \"kontaktEmail\": \"nije-email\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/momcadi – nova momčad (201)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 201 Created', () => pm.response.to.have.status(201));",
+									"",
+									"const m = pm.response.json();",
+									"pm.test('Location vodi na novu momčad', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/momcadi/' + m.id));",
+									"pm.test('Momčad je spremljena bez igrača', () => {",
+									"    pm.expect(m.naziv).to.eql(pm.collectionVariables.get('nazivTest'));",
+									"    pm.expect(m.igraci).to.be.empty;",
+									"});",
+									"pm.collectionVariables.set('novaMomcadId', m.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"naziv\": \"{{nazivTest}}\", \"grad\": \"Varaždin\", \"igraliste\": \"Igralište uz Dravu\", \"godinaOsnutka\": 1998, \"kontaktEmail\": \"tajnik@primjer.liga.local\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "POST /api/momcadi – isti naziv (409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 409 Conflict', () => pm.response.to.have.status(409));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"naziv\": \"{{nazivTest}}\", \"grad\": \"Varaždin\", \"igraliste\": \"Igralište uz Dravu\", \"godinaOsnutka\": 1998, \"kontaktEmail\": \"tajnik@primjer.liga.local\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "PUT /api/momcadi/{id} – izmjena (204)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 204 No Content', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi/{{novaMomcadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi",
+								"{{novaMomcadId}}"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"naziv\": \"{{nazivTest}}\", \"grad\": \"Čakovec\", \"godinaOsnutka\": 2001 }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "GET /api/momcadi/{id} – provjera izmjene (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 200 OK', () => pm.response.to.have.status(200));",
+									"",
+									"const m = pm.response.json();",
+									"pm.test('Grad je izmijenjen, a izostavljena polja su prazna', () => {",
+									"    pm.expect(m.grad).to.eql('Čakovec');",
+									"    pm.expect(m.godinaOsnutka).to.eql(2001);",
+									"    pm.expect(m.igraliste).to.be.null;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi/{{novaMomcadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi",
+								"{{novaMomcadId}}"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					}
+				},
+				{
+					"name": "PUT /api/momcadi/{id} – nepostojeća (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 404 Not Found', () => pm.response.to.have.status(404));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi/999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi",
+								"999999"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"naziv\": \"Nebitno\", \"grad\": \"Zagreb\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/momcadi/{id} – momčad s igračima (409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 409 Conflict', () => pm.response.to.have.status(409));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi/{{domacinId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi",
+								"{{domacinId}}"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/momcadi/{id} – administrator (204)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 204 No Content', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi/{{novaMomcadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi",
+								"{{novaMomcadId}}"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "DELETE /api/momcadi/{id} – već obrisana (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status je 404 Not Found', () => pm.response.to.have.status(404));",
+									"pm.test('Odgovor je problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/momcadi/{{novaMomcadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"momcadi",
+								"{{novaMomcadId}}"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "sezonaId",
+			"value": ""
+		},
+		{
+			"key": "buducaUtakmicaId",
+			"value": ""
+		},
+		{
+			"key": "odigranaUtakmicaId",
+			"value": ""
+		},
+		{
+			"key": "cekaUtakmicaId",
+			"value": ""
+		},
+		{
+			"key": "domacinId",
+			"value": ""
+		},
+		{
+			"key": "strijelacId",
+			"value": ""
+		},
+		{
+			"key": "novaMomcadId",
+			"value": ""
+		},
+		{
+			"key": "nazivTest",
+			"value": ""
+		}
+	]
+}
