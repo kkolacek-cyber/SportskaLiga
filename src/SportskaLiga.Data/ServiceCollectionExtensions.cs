@@ -35,12 +35,20 @@ public static class ServiceCollectionExtensions
 
     /// <summary>
     /// Primjenjuje migracije i puni bazu početnim podacima. Poziva se samo iz Admin aplikacije
-    /// (ostale čekaju da Admin postane zdrav), da tri aplikacije ne migriraju istovremeno.
+    /// (ostale čekaju da Admin postane zdrav), da tri aplikacije ne pišu u bazu istovremeno.
+    /// <para>
+    /// U Dockeru migracije primjenjuje zaseban kontejner <c>migracije</c> (EF Core migration bundle), pa compose
+    /// postavlja <c>Baza:MigracijePriPokretanju=false</c> i Admin samo seeda. Kod <c>dotnet run</c> postavka
+    /// nije zadana (true) i Admin migrira sam.
+    /// </para>
     /// </summary>
     public static async Task MigrateAndSeedAsync(this IServiceProvider services, CancellationToken ct = default)
     {
-        using (var scope = services.CreateScope())
+        var konfiguracija = services.GetRequiredService<IConfiguration>();
+
+        if (konfiguracija.GetValue("Baza:MigracijePriPokretanju", true))
         {
+            using var scope = services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<SportskaLigaDbContext>();
             await context.Database.MigrateAsync(ct);
         }

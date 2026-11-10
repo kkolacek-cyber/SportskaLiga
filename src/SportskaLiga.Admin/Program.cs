@@ -105,8 +105,8 @@ app.MapControllerRoute(
 // Koristi ga Docker healthcheck.
 app.MapHealthChecks("/health");
 
-// Admin je jedina aplikacija koja migrira i seeda bazu. Server počinje slušati tek u app.Run(),
-// pa je /health "zdrav" tek nakon migracije i seeda – na to čekaju Portal i Api (depends_on).
+// Admin je jedina aplikacija koja seeda bazu (i migrira je kod dotnet run; u Dockeru to radi kontejner "migracije").
+// Server počinje slušati tek u app.Run(), pa je /health "zdrav" tek nakon seeda – na to čekaju Portal i Api (depends_on).
 await app.Services.MigrateAndSeedAsync();
 
 app.Run();

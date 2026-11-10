@@ -1,11 +1,29 @@
 name: sportskaliga
 
-# Faza 1: za sada samo baza. Portal, Admin i Api dodaju se u kasnijim fazama.
-#
-#   docker compose up -d db      PostgreSQL na localhost:5432
+# Pokretanje cijelog rješenja:  docker compose up --build
 #
 # Zadane vrijednosti (${VAR:-default}) su DEMO vrijednosti samo za razvoj, tako da naredba radi
 # na čistom računalu bez .env datoteke. Za vlastite vrijednosti kopiraj .env.example u .env.
+#
+# Redoslijed pokretanja:
+#   db (healthy) -> migracije (primijeni migracije i završi) -> admin (seed, zatim healthy) -> portal, api
+#
+#   Portal  http://localhost:8081      Admin  http://localhost:8082      Api  http://localhost:8083/swagger
+
+# Zajedničke postavke triju web aplikacija (YAML sidro; usluge ga uključuju s "<<: *aplikacija").
+x-aplikacija: &aplikacija
+  restart: unless-stopped
+  environment: &aplikacija-okruzenje
+    ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+    # Host je "db" = ime usluge u compose mreži (ne localhost).
+    ConnectionStrings__SportskaLiga: >-
+      Host=db;Port=5432;Database=${POSTGRES_DB:-sportskaliga};Username=${POSTGRES_USER:-liga};Password=${POSTGRES_PASSWORD:-liga_dev_password}
+  healthcheck: &aplikacija-healthcheck
+    test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health >/dev/null || exit 1"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 10s
 
 services:
   db:
@@ -26,5 +44,113 @@ services:
       retries: 10
       start_period: 5s
 
+  # Dodatni Docker zahtjev: zaseban inicijalizacijski kontejner (EF Core migration bundle).
+  # Pokreće se kad je baza zdrava, primijeni migracije i završi (status "Exited (0)" je ispravan).
+  migracije:
+    build:
+      context: .
+      dockerfile: src/SportskaLiga.Data/Dockerfile
+    image: sportskaliga-migracije
+    restart: "no"
+    environment:
+      ConnectionStrings__SportskaLiga: >-
+        Host=db;Port=5432;Database=${POSTGRES_DB:-sportskaliga};Username=${POSTGRES_USER:-liga};Password=${POSTGRES_PASSWORD:-liga_dev_password}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  admin:
+    <<: *aplikacija
+    build:
+      context: .
+      dockerfile: src/SportskaLiga.Admin/Dockerfile
+    image: sportskaliga-admin
+    environment:
+      <<: *aplikacija-okruzenje
+      # Migracije je već primijenio kontejner "migracije"; Admin samo seeda početne podatke.
+      Baza__MigracijePriPokretanju: "false"
+      # Testni računi koje seed stvara pri prvom pokretanju (vidi README).
+      Seed__AdminEmail: ${SEED_ADMIN_EMAIL:-admin@liga.local}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-Admin123!}
+      Seed__DelegatEmail: ${SEED_DELEGAT_EMAIL:-delegat@liga.local}
+      Seed__DelegatPassword: ${SEED_DELEGAT_PASSWORD:-Delegat123!}
+      # Trajni DataProtection ključevi: prijava (kolačić) preživi ponovno pokretanje kontejnera.
+      DataProtection__KeysPath: /keys/admin
+    volumes:
+      - dpkeys:/keys
+    healthcheck:
+      <<: *aplikacija-healthcheck
+      # Admin prije prvog odgovora seeda demo ligu, pa mu treba više vremena.
+      start_period: 40s
+      retries: 12
+    depends_on:
+      migracije:
+        condition: service_completed_successfully
+    ports:
+      - "${ADMIN_PORT:-8082}:8080"
+
+  portal:
+    <<: *aplikacija
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sportskaliga-portal
+    environment:
+      <<: *aplikacija-okruzenje
+      DataProtection__KeysPath: /keys/portal
+    volumes:
+      - dpkeys:/keys
+    depends_on:
+      admin:
+        condition: service_healthy
+    ports:
+      - "${PORTAL_PORT:-8081}:8080"
+
+  api:
+    <<: *aplikacija
+    build:
+      context: .
+      dockerfile: src/SportskaLiga.Api/Dockerfile
+    image: sportskaliga-api
+    environment:
+      <<: *aplikacija-okruzenje
+      # JWT: ključ mora imati najmanje 32 znaka, inače se API ne podiže. Zadani ključ je samo DEMO.
+      Jwt__Key: ${JWT_KEY:-demo-jwt-key-only-for-local-development-0123456789abcdef}
+      Jwt__Issuer: ${JWT_ISSUER:-sportskaliga-api}
+      Jwt__Audience: ${JWT_AUDIENCE:-sportskaliga-clients}
+      Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
+    depends_on:
+      admin:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8083}:8080"
+
+  # Postman testovi API-ja (nije dio obične naredbe `up`):
+  #   docker compose --profile test run --rm newman
+  newman:
+    profiles: ["test"]
+    image: postman/newman:6-alpine
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./postman:/etc/newman:ro
+    command:
+      - run
+      - SportskaLiga.postman_collection.json
+      - -e
+      - SportskaLiga.docker.postman_environment.json
+      - --env-var
+      - baseUrl=http://api:8080
+      - --env-var
+      - adminEmail=${SEED_ADMIN_EMAIL:-admin@liga.local}
+      - --env-var
+      - adminPassword=${SEED_ADMIN_PASSWORD:-Admin123!}
+      - --env-var
+      - delegatEmail=${SEED_DELEGAT_EMAIL:-delegat@liga.local}
+      - --env-var
+      - delegatPassword=${SEED_DELEGAT_PASSWORD:-Delegat123!}
+
 volumes:
   pgdata:    # podaci PostgreSQL-a
+  dpkeys:    # ASP.NET DataProtection ključevi Admina i Portala (kolačić prijave i antiforgery tokeni)
